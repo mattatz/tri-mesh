@@ -127,7 +127,7 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// let mut sum_vertex_positions = Vec3::zeros();
     /// for vertex_id in mesh.vertex_iter() {
     ///     sum_vertex_positions += mesh.vertex_position(vertex_id);
@@ -147,7 +147,7 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// let mut halfedge_length_average = 0.0;
     /// let mut i = 0;
     /// for halfedge_id in mesh.halfedge_iter() {

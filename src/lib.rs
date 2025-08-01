@@ -9,6 +9,7 @@
 
 pub mod math;
 pub mod types;
+pub use types::*;
 
 mod mesh;
 pub use mesh::*;

@@ -14,8 +14,6 @@ mod face_measures;
 mod transformations;
 
 mod bounding_box;
-#[doc(inline)]
-pub use bounding_box::*;
 
 mod validity;
 
