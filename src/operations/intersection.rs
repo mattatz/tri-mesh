@@ -163,7 +163,7 @@ impl Mesh {
         point: &Vec3,
     ) -> Option<Intersection> {
         let p = self.vertex_position(vertex_id);
-        if (p - point).magnitude2() < SQR_MARGIN {
+        if (p - point).norm_squared() < SQR_MARGIN {
             Some(Intersection::Point {
                 primitive: Primitive::Vertex(vertex_id),
                 point: *point,
@@ -257,11 +257,11 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Positions, TriMesh};
+    use crate::types::{MeshSource, Positions};
 
     #[test]
     fn test_face_point_intersection_when_point_in_plane() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 3.0], [3.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn test_edge_point_intersection() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 3.0], [3.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -415,7 +415,7 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_no_intersection() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -430,7 +430,7 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_face_end_point_intersects() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_point() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -475,7 +475,7 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_vertex_line_piece_intersects_at_point() {
         let point = Vec3::new(0.1, 0.0, 0.1);
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.1, 0.0, 0.1], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -501,7 +501,7 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_edge_line_piece_intersects_at_point() {
         let point = Vec3::new(0.3, 0.0, 0.0);
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -531,7 +531,7 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_linepiece() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -559,7 +559,7 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_point_and_line_piece_is_in_plane(
     ) {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -681,7 +681,7 @@ mod utility {
 
         let b = c1 / c2;
         let pb = p0 + b * v;
-        (point - &pb).magnitude()
+        (point - pb).magnitude()
     }
 
     #[cfg(test)]

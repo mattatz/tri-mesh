@@ -67,7 +67,9 @@ impl AxisAlignedBoundingBox {
 /// Represents mesh positions
 #[derive(Debug, Clone, PartialEq)]
 pub enum Positions {
+    /// 32-bit positions
     F32(Vec<[f32; 3]>),
+    /// 64-bit positions
     F64(Vec<[f64; 3]>),
 }
 
@@ -99,8 +101,11 @@ impl Positions {
 /// Represents mesh indices
 #[derive(Debug, Clone, PartialEq)]
 pub enum Indices {
+    /// 8-bit indices
     U8(Vec<u8>),
+    /// 16-bit indices
     U16(Vec<u16>),
+    /// 32-bit indices
     U32(Vec<u32>),
 }
 
@@ -131,13 +136,16 @@ impl Indices {
 
 /// Simple triangle mesh structure for testing
 #[derive(Debug, Clone, PartialEq)]
-pub struct TriMesh {
+pub struct MeshSource {
+    /// The positions of the mesh
     pub positions: Positions,
+    /// The indices of the mesh
     pub indices: Option<Indices>,
+    /// The normals of the mesh
     pub normals: Option<Positions>,
 }
 
-impl Default for TriMesh {
+impl Default for MeshSource {
     fn default() -> Self {
         Self {
             positions: Positions::F64(vec![]),
@@ -147,9 +155,9 @@ impl Default for TriMesh {
     }
 }
 
-impl TriMesh {
+impl MeshSource {
     /// Creates a unit sphere mesh for testing
-    pub fn sphere(subdivisions: u32) -> Self {
+    pub fn sphere(_subdivisions: u32) -> Self {
         // Simple icosphere generation
         let t = (1.0 + 5.0_f64.sqrt()) / 2.0;
         let vertices = vec![
@@ -257,7 +265,7 @@ impl TriMesh {
 
     /// Creates a cube mesh for testing
     pub fn cube() -> Self {
-        TriMesh {
+        MeshSource {
             indices: Some(Indices::U8(vec![
                 0, 1, 2, 0, 2, 3, 4, 7, 6, 4, 6, 5, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2,
                 7, 3, 4, 0, 3, 4, 3, 7,

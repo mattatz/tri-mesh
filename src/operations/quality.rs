@@ -51,9 +51,9 @@ impl Mesh {
     /// Flip all edges in the mesh
     /// * which is not on the boundary
     /// * where the flip will improve the sum of the quality of the two faces adjacent to the edge
-    /// (The face quality is given as the circumscribed radius divided by the inscribed radius)
+    ///   (The face quality is given as the circumscribed radius divided by the inscribed radius)
     /// * where the dot product between the normals of the adjacent faces is smaller than `flattness_threshold`
-    /// (1: Completely flat, 0: 90 degrees angle between normals)
+    ///   (1: Completely flat, 0: 90 degrees angle between normals)
     /// * where the flip will not result in inverted triangles
     ///
     pub fn flip_edges(&mut self, flatness_threshold: f64) {
@@ -162,11 +162,11 @@ fn triangle_quality(p0: &Vec3, p1: &Vec3, p2: &Vec3) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, MeshSource, Positions};
 
     #[test]
     fn test_collapse_small_faces() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 2, 3, 0, 3, 1, 0, 1, 2])),
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],

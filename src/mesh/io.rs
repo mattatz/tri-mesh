@@ -1,30 +1,30 @@
 //! See [Mesh](crate::mesh::Mesh).
 
 use crate::mesh::*;
-use crate::types::{Indices, Positions, TriMesh};
+use crate::types::{Indices, MeshSource, Positions};
 
 impl Mesh {
     ///
-    /// Constructs a new [Mesh] from a [TriMesh] which can either be manually constructed or from test generation functions.
+    /// Constructs a new [Mesh] from a [MeshSource] which can either be manually constructed or from test generation functions.
     ///
     /// # Examples
     /// ```
-    /// # use tri_mesh::*;
-    /// # use tri_mesh::types::TriMesh;
-    /// let mesh = Mesh::new(&TriMesh::sphere(4));
+    /// use tri_mesh::*;
+    /// use tri_mesh::types::MeshSource;
+    /// let mesh = Mesh::new(&MeshSource::sphere(4));
     /// ```
     ///
     /// ```
-    /// # use tri_mesh::*;
-    /// # use tri_mesh::types::{TriMesh, Positions, Indices};
-    /// let mesh = Mesh::new(&TriMesh {
+    /// use tri_mesh::*;
+    /// use tri_mesh::types::{MeshSource, Positions, Indices};
+    /// let mesh = Mesh::new(&MeshSource {
     ///     positions: Positions::F64(vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
     ///     indices: None,
     ///     normals: None,
     /// });
     /// ```
     ///
-    pub fn new(input: &TriMesh) -> Self {
+    pub fn new(input: &MeshSource) -> Self {
         let no_vertices = input.positions.len();
         let no_faces = match &input.indices {
             Some(indices) => indices.len() / 3,
@@ -111,9 +111,9 @@ impl Mesh {
     }
 
     ///
-    /// Exports the [Mesh] into a [TriMesh] that contain the raw buffer data.
+    /// Exports the [Mesh] into a [MeshSource] that contain the raw buffer data.
     ///
-    pub fn export(&self) -> TriMesh {
+    pub fn export(&self) -> MeshSource {
         let vertices: Vec<VertexID> = self.vertex_iter().collect();
         let mut indices = Vec::with_capacity(self.no_faces() * 3);
         for face_id in self.face_iter() {
@@ -140,7 +140,7 @@ impl Mesh {
             })
             .collect();
 
-        TriMesh {
+        MeshSource {
             indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
             normals: Some(Positions::F64(normals)),
@@ -148,25 +148,25 @@ impl Mesh {
     }
 }
 
-impl From<TriMesh> for Mesh {
-    fn from(mesh: TriMesh) -> Self {
+impl From<MeshSource> for Mesh {
+    fn from(mesh: MeshSource) -> Self {
         Self::new(&mesh)
     }
 }
 
-impl From<&TriMesh> for Mesh {
-    fn from(mesh: &TriMesh) -> Self {
+impl From<&MeshSource> for Mesh {
+    fn from(mesh: &MeshSource) -> Self {
         Self::new(mesh)
     }
 }
 
-impl From<Mesh> for TriMesh {
+impl From<Mesh> for MeshSource {
     fn from(mesh: Mesh) -> Self {
         mesh.export()
     }
 }
 
-impl From<&Mesh> for TriMesh {
+impl From<&Mesh> for MeshSource {
     fn from(mesh: &Mesh) -> Self {
         mesh.export()
     }
@@ -178,8 +178,8 @@ mod tests {
 
     #[test]
     fn test_indexed_export() {
-        let mesh: Mesh = TriMesh::cylinder(16).into();
-        let m: TriMesh = (&mesh).into();
+        let mesh: Mesh = MeshSource::cylinder(16).into();
+        let m: MeshSource = (&mesh).into();
 
         assert_eq!(m.indices.as_ref().unwrap().len() / 3, mesh.no_faces());
         assert_eq!(m.positions.len(), mesh.no_vertices());
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_new_from_positions() {
-        let mesh: Mesh = TriMesh {
+        let mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, 0.0],

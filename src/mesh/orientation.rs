@@ -27,13 +27,11 @@ impl Mesh {
     fn flip_orientation_of_face(&mut self, face_id: FaceID) {
         let mut update_list = [(None, None, None); 3];
 
-        let mut i = 0;
-        for halfedge_id in self.face_halfedge_iter(face_id) {
+        for (i, halfedge_id) in self.face_halfedge_iter(face_id).enumerate() {
             let mut walker = self.walker_from_halfedge(halfedge_id);
             let vertex_id = walker.vertex_id();
             walker.as_previous();
             update_list[i] = (Some(halfedge_id), walker.vertex_id(), walker.halfedge_id());
-            i += 1;
 
             self.connectivity_info
                 .set_vertex_halfedge(walker.vertex_id().unwrap(), walker.halfedge_id());
@@ -82,7 +80,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::TriMesh;
+    use crate::types::MeshSource;
 
     #[test]
     fn test_fix_orientation() {
@@ -96,7 +94,7 @@ mod tests {
 
     #[test]
     fn test_flip_orientation() {
-        let mut mesh: Mesh = TriMesh::sphere(4).into();
+        let mut mesh: Mesh = MeshSource::sphere(4).into();
 
         let mut map = std::collections::HashMap::new();
         for face_id in mesh.face_iter() {

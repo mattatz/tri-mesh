@@ -67,7 +67,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, MeshSource, Positions};
 
     #[test]
     fn test_one_connected_component() {
@@ -90,7 +90,7 @@ mod tests {
     }
 
     fn create_connected_test_object() -> Mesh {
-        TriMesh {
+        MeshSource {
             positions: Positions::F64(vec![
                 [1.0, -1.0, -1.0],
                 [1.0, -1.0, 1.0],
@@ -111,7 +111,7 @@ mod tests {
     }
 
     fn create_unconnected_test_object() -> Mesh {
-        TriMesh {
+        MeshSource {
             positions: Positions::F64(vec![
                 [1.0, -1.0, -1.0],
                 [1.0, -1.0, 1.0],

@@ -108,7 +108,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::TriMesh;
+    use crate::types::MeshSource;
     #[test]
     fn test_is_closed_when_not_closed() {
         let mesh = crate::test_utility::subdivided_triangle();
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn test_is_closed_when_closed() {
-        let mesh: Mesh = TriMesh::sphere(4).into();
+        let mesh: Mesh = MeshSource::sphere(4).into();
         assert!(mesh.is_closed());
     }
 }

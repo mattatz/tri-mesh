@@ -180,7 +180,7 @@ impl Mesh {
 
     fn find_overlapping_faces(
         &self,
-        set_of_vertices_to_merge: &Vec<Vec<VertexID>>,
+        set_of_vertices_to_merge: &[Vec<VertexID>],
     ) -> Vec<Vec<FaceID>> {
         let vertices_to_merge = |vertex_id| {
             set_of_vertices_to_merge
@@ -233,7 +233,7 @@ impl Mesh {
 
     fn find_overlapping_edges(
         &self,
-        set_of_vertices_to_merge: &Vec<Vec<VertexID>>,
+        set_of_vertices_to_merge: &[Vec<VertexID>],
     ) -> Vec<Vec<HalfEdgeID>> {
         let vertices_to_merge = |vertex_id| {
             set_of_vertices_to_merge
@@ -279,7 +279,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, MeshSource, Positions};
 
     #[test]
     fn test_remove_lonely_vertices() {
@@ -312,7 +312,7 @@ mod tests {
             [1.0, 0.0, -0.5],
         ];
 
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             positions: Positions::F64(positions),
             normals: None,
             ..Default::default()
@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn test_merge_overlapping_primitives_of_cube() {
-        let mut mesh: Mesh = TriMesh::cube().into();
+        let mut mesh: Mesh = MeshSource::cube().into();
         mesh.merge_overlapping_primitives();
 
         assert_eq!(8, mesh.no_vertices());
@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn test_merge_overlapping_individual_faces() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, -0.5],
@@ -365,7 +365,7 @@ mod tests {
 
     #[test]
     fn test_merge_two_overlapping_faces() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5])),
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn test_merge_three_overlapping_faces() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![
                 0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5, 8, 10, 9,
             ])),
@@ -408,7 +408,6 @@ mod tests {
                 [-1.5, 0.0, 1.0],
             ]),
             normals: None,
-            ..Default::default()
         }
         .into();
         mesh.merge_overlapping_primitives();
@@ -421,7 +420,7 @@ mod tests {
 
     #[test]
     fn test_merge_vertices() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
                 [1.0, 0.0, -0.5],
@@ -438,11 +437,14 @@ mod tests {
         let mut vertex_id1 = None;
         for vertex_id in mesh.vertex_iter() {
             if mesh.vertex_position(vertex_id) == Vec3::new(0.0, 0.0, 0.0) {
-                if vertex_id1.is_none() {
-                    vertex_id1 = Some(vertex_id);
-                } else {
-                    mesh.merge_vertices(vertex_id1.unwrap(), vertex_id);
-                    break;
+                match vertex_id1 {
+                    Some(vertex_id1) => {
+                        mesh.merge_vertices(vertex_id1, vertex_id);
+                        break;
+                    }
+                    None => {
+                        vertex_id1 = Some(vertex_id);
+                    }
                 }
             }
         }
@@ -454,7 +456,7 @@ mod tests {
 
     #[test]
     fn test_merge_halfedges() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![
                 [1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0],
@@ -492,7 +494,7 @@ mod tests {
 
     #[test]
     fn test_merge_overlapping_primitives_with_cube() {
-        let mut mesh: Mesh = TriMesh::cube().into();
+        let mut mesh: Mesh = MeshSource::cube().into();
         mesh.merge_overlapping_primitives();
         assert_eq!(mesh.no_faces(), 12);
         assert_eq!(mesh.no_vertices(), 8);

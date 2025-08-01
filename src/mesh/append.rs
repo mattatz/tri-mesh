@@ -78,12 +78,12 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::TriMesh;
+    use crate::types::MeshSource;
 
     #[test]
     fn test_sphere_sphere_append() {
-        let mut mesh1: Mesh = TriMesh::sphere(4).into();
-        let mut mesh2: Mesh = TriMesh::sphere(3).into();
+        let mut mesh1: Mesh = MeshSource::sphere(4).into();
+        let mut mesh2: Mesh = MeshSource::sphere(3).into();
         mesh2.translate(vec3(0.5, 0.5, 0.5));
 
         let prev_no_vertices = mesh1.no_vertices();
@@ -103,10 +103,7 @@ mod tests {
         assert_eq!(mesh1.no_faces(), mesh2.no_faces() + prev_no_faces);
 
         for pos in mesh2.vertex_iter().map(|v| mesh2.vertex_position(v)) {
-            assert!(mesh1
-                .vertex_iter()
-                .find(|v| mesh1.vertex_position(*v) == pos)
-                .is_some());
+            assert!(mesh1.vertex_iter().any(|v| mesh1.vertex_position(v) == pos));
         }
     }
 }

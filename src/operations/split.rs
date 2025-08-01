@@ -428,16 +428,16 @@ fn find_intersections_between_edge_face(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, MeshSource, Positions};
 
     #[test]
     fn test_clone_subset() {
         let mesh = crate::test_utility::triangle_strip();
 
         let mut faces = std::collections::HashSet::new();
-        for face_id in mesh.face_iter() {
+        let face_id = mesh.face_iter().next();
+        if let Some(face_id) = face_id {
             faces.insert(face_id);
-            break;
         }
 
         let sub_mesh = mesh.clone_subset(&|_, face_id| faces.contains(&face_id));
@@ -472,13 +472,13 @@ mod tests {
 
     #[test]
     fn test_face_face_stitching_at_edge() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
-        let mut mesh2: Mesh = TriMesh {
+        let mut mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, 2.0], [-2.0, 0.0, -2.0], [-2.0, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -505,13 +505,13 @@ mod tests {
 
     #[test]
     fn test_face_face_stitching_at_mid_edge() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
-        let mut mesh2: Mesh = TriMesh {
+        let mut mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, 1.0], [-2.0, 0.0, -1.0], [-2.0, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -571,7 +571,7 @@ mod tests {
 
     #[test]
     fn test_sphere_box_stitching() {
-        let mut mesh1: Mesh = TriMesh::sphere(3).into();
+        let mut mesh1: Mesh = MeshSource::sphere(3).into();
         for _ in 0..1 {
             for face_id in mesh1.face_iter() {
                 let p = mesh1.face_center(face_id).normalize();
@@ -644,7 +644,7 @@ mod tests {
     #[test]
     fn test_is_at_intersection() {
         let mesh1 = crate::test_utility::cube();
-        let mesh2: Mesh = TriMesh {
+        let mesh2: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 1, 2, 0, 2, 3, 0, 3, 4])),
             positions: Positions::F64(vec![
                 [-1.0, 1.0, 1.0],
@@ -704,7 +704,7 @@ mod tests {
     #[test]
     fn test_finding_face_edge_intersections() {
         let mesh1 = create_simple_mesh_x_z();
-        let mesh2: Mesh = TriMesh {
+        let mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.5, -0.5, 0.0], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -796,7 +796,7 @@ mod tests {
 
     #[test]
     fn test_split_face_two_times() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
@@ -804,7 +804,7 @@ mod tests {
         .into();
         let area1 = mesh1.face_area(mesh1.face_iter().next().unwrap());
 
-        let mut mesh2: Mesh = TriMesh {
+        let mut mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.2, -0.2, 0.5], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -842,13 +842,13 @@ mod tests {
 
     #[test]
     fn test_split_edge_two_times() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
-        let mut mesh2: Mesh = TriMesh {
+        let mut mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.0, -0.2, 0.5], [0.0, -0.2, 1.5], [0.0, 1.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -880,14 +880,14 @@ mod tests {
 
     #[test]
     fn test_face_face_splitting() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
 
-        let mut mesh2: Mesh = TriMesh {
+        let mut mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[0.2, -0.2, 0.5], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -919,8 +919,8 @@ mod tests {
 
     #[test]
     fn test_box_box_splitting() {
-        let mut mesh1: Mesh = TriMesh::sphere(2).into();
-        let mut mesh2: Mesh = TriMesh::sphere(2).into();
+        let mut mesh1: Mesh = MeshSource::sphere(2).into();
+        let mut mesh2: Mesh = MeshSource::sphere(2).into();
         mesh2.translate(vec3(0.5, 0.5, 0.5));
 
         mesh1.split_primitives_at_intersection(&mut mesh2);
@@ -930,7 +930,7 @@ mod tests {
     }
 
     fn create_single_triangle() -> Mesh {
-        TriMesh {
+        MeshSource {
             positions: Positions::F64(vec![[0.5, 0.0, 0.25], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
@@ -948,7 +948,7 @@ mod tests {
             [0.0, 0.0, 2.0],
             [1.0, 0.0, 2.5],
         ];
-        TriMesh {
+        MeshSource {
             indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
             normals: None,
@@ -966,7 +966,7 @@ mod tests {
             [0.5, -0.5, 2.0],
             [0.5, 0.5, 2.5],
         ];
-        TriMesh {
+        MeshSource {
             indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
             normals: None,
@@ -984,7 +984,7 @@ mod tests {
             [0.5, -0.5, 1.8],
             [0.5, 0.5, 2.3],
         ];
-        TriMesh {
+        MeshSource {
             indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
             normals: None,

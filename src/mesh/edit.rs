@@ -346,13 +346,11 @@ impl Mesh {
             self.connecting_edge(vertex_id3, vertex_id1),
         ];
 
-        for edge in edges {
-            if let Some(edge) = edge {
-                if self.walker_from_halfedge(edge).face_id().is_some() {
-                    return Err(Error::ActionWillResultInNonManifoldMesh(
-                        "add_face".to_string(),
-                    ));
-                }
+        for edge in edges.into_iter().flatten() {
+            if self.walker_from_halfedge(edge).face_id().is_some() {
+                return Err(Error::ActionWillResultInNonManifoldMesh(
+                    "add_face".to_string(),
+                ));
             }
         }
 
@@ -477,7 +475,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, MeshSource, Positions};
 
     #[test]
     fn test_flip_edge() {
@@ -513,7 +511,7 @@ mod tests {
     #[test]
     fn test_flip_multiple_edges() {
         let mut no_flips = 0;
-        let mut mesh: Mesh = TriMesh::sphere(3).into();
+        let mut mesh: Mesh = MeshSource::sphere(3).into();
         let no_edges = mesh.no_halfedges();
         for halfedge_id in mesh.halfedge_iter() {
             let (v0, v1) = mesh.edge_vertices(halfedge_id);
@@ -651,7 +649,7 @@ mod tests {
 
     #[test]
     fn test_collapse_edge_on_boundary1() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4])),
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
@@ -685,7 +683,7 @@ mod tests {
 
     #[test]
     fn test_collapse_edge_on_boundary2() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 2, 3, 0, 3, 1])),
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
@@ -729,7 +727,7 @@ mod tests {
 
     #[test]
     fn test_recursive_collapse_edge() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4])),
             positions: Positions::F64(vec![
                 [0.0, 0.0, 0.0],
@@ -758,7 +756,7 @@ mod tests {
 
     #[test]
     fn test_remove_face_when_unconnected() {
-        let mut mesh: Mesh = TriMesh {
+        let mut mesh: Mesh = MeshSource {
             positions: Positions::F64(vec![
                 [1.0, 0.0, 0.0],
                 [0.0, 0.0, 0.0],
@@ -812,7 +810,7 @@ mod tests {
 
     #[test]
     fn test_add_face() {
-        let mut mesh = Mesh::new(&TriMesh::default());
+        let mut mesh = Mesh::new(&MeshSource::default());
         for i in 0..3 {
             let vertex_id1 = mesh.add_vertex(Vec3::new(1.0, i as f64, 0.0));
             let vertex_id2 = mesh.add_vertex(Vec3::new(0.0, i as f64, 0.0));

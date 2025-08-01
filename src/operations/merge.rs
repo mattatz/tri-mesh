@@ -18,18 +18,18 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{Positions, TriMesh};
+    use crate::types::{MeshSource, Positions};
 
     #[test]
     fn test_face_face_merging_at_edge() {
-        let mut mesh1: Mesh = TriMesh {
+        let mut mesh1: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
 
-        let mesh2: Mesh = TriMesh {
+        let mesh2: Mesh = MeshSource {
             positions: Positions::F64(vec![[-2.0, 0.0, 2.0], [-2.0, 0.0, -2.0], [-2.0, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
