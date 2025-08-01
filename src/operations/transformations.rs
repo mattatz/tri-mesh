@@ -112,7 +112,7 @@ impl Mesh {
     ///     let mut mesh: Mesh = MeshSource::sphere(4).into();
     /// #   let first_vertex_id = mesh.vertex_iter().next().unwrap();
     /// #   let vertex_position_before = mesh.vertex_position(first_vertex_id);
-    ///     mesh.apply_transformation(Mat4::from_translation(vec3(2.5, -1.0, 0.0)));
+    ///     mesh.apply_transformation(Mat4::new_translation(&vec3(2.5, -1.0, 0.0)));
     /// #   let vertex_position_after = mesh.vertex_position(first_vertex_id);
     /// #   assert_eq!(vertex_position_before + vec3(2.5, -1.0, 0.0), vertex_position_after);
     /// #   mesh.is_valid().unwrap();
