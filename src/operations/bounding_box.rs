@@ -20,5 +20,4 @@ impl Mesh {
 }
 
 #[cfg(test)]
-mod tests {
-}
+mod tests {}

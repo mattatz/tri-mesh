@@ -56,9 +56,7 @@ impl Mesh {
     ) -> Vec<HashSet<FaceID>> {
         let mut components: Vec<HashSet<FaceID>> = Vec::new();
         for face_id in self.face_iter() {
-            if !components
-                .iter().any(|com| com.contains(&face_id))
-            {
+            if !components.iter().any(|com| com.contains(&face_id)) {
                 components.push(self.connected_component_with_limit(face_id, limit));
             }
         }

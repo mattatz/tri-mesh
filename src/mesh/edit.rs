@@ -30,7 +30,9 @@ impl Mesh {
         let mut walker = self.walker_from_halfedge(halfedge_id);
         let face_id = walker
             .face_id()
-            .ok_or(Error::ActionWillResultInInvalidMesh("Trying to flip edge on boundary".to_string()))?;
+            .ok_or(Error::ActionWillResultInInvalidMesh(
+                "Trying to flip edge on boundary".to_string(),
+            ))?;
         let next_id = walker.next_id().unwrap();
         let previous_id = walker.previous_id().unwrap();
         let v0 = walker.vertex_id().unwrap();
@@ -42,7 +44,9 @@ impl Mesh {
         let twin_id = walker.halfedge_id().unwrap();
         let twin_face_id = walker
             .face_id()
-            .ok_or(Error::ActionWillResultInInvalidMesh("Trying to flip edge on boundary".to_string()))?;
+            .ok_or(Error::ActionWillResultInInvalidMesh(
+                "Trying to flip edge on boundary".to_string(),
+            ))?;
         let twin_next_id = walker.next_id().unwrap();
         let twin_previous_id = walker.previous_id().unwrap();
         let v1 = walker.vertex_id().unwrap();

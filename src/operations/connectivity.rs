@@ -24,7 +24,9 @@ impl Mesh {
         vertex_id1: VertexID,
         vertex_id2: VertexID,
     ) -> Option<HalfEdgeID> {
-        self.vertex_halfedge_iter(vertex_id1).find(|&halfedge_id| self.walker_from_halfedge(halfedge_id).vertex_id().unwrap() == vertex_id2)
+        self.vertex_halfedge_iter(vertex_id1).find(|&halfedge_id| {
+            self.walker_from_halfedge(halfedge_id).vertex_id().unwrap() == vertex_id2
+        })
     }
 
     /// Returns whether or not the vertex is on a boundary.

@@ -192,15 +192,11 @@ impl ConnectivityInfo {
     }
 
     pub fn halfedge(&self, halfedge_id: HalfEdgeID) -> Option<HalfEdge> {
-        RefCell::borrow(&self.halfedges)
-            .get(halfedge_id).copied()
+        RefCell::borrow(&self.halfedges).get(halfedge_id).copied()
     }
 
     pub fn face_halfedge(&self, face_id: FaceID) -> Option<HalfEdgeID> {
-        RefCell::borrow(&self.faces)
-            .get(face_id)
-            .unwrap()
-            .halfedge
+        RefCell::borrow(&self.faces).get(face_id).unwrap().halfedge
     }
 
     pub fn position(&self, vertex_id: VertexID) -> Vec3 {

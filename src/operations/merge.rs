@@ -23,22 +23,14 @@ mod tests {
     #[test]
     fn test_face_face_merging_at_edge() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                [-2.0, 0.0, -2.0],
-                [-2.0, 0.0, 2.0],
-                [2.0, 0.0, 0.0],
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
             normals: None,
             ..Default::default()
         }
         .into();
 
         let mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                [-2.0, 0.0, 2.0],
-                [-2.0, 0.0, -2.0],
-                [-2.0, 0.5, 0.0],
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, 2.0], [-2.0, 0.0, -2.0], [-2.0, 0.5, 0.0]]),
             normals: None,
             ..Default::default()
         }

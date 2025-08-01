@@ -2,8 +2,8 @@
 //! Linear algebra types for vector calculations. Using nalgebra library.
 //!
 
-use nalgebra as na;
 pub use na::{Matrix3, Matrix4, Vector3, Vector4};
+use nalgebra as na;
 
 /// Vector with three elements.
 pub type Vec3 = Vector3<f64>;
@@ -71,19 +71,19 @@ pub trait InnerSpace: Sized {
 
 impl InnerSpace for Vector3<f64> {
     type Scalar = f64;
-    
+
     fn dot(&self, other: &Self) -> Self::Scalar {
         na::Vector3::dot(self, other)
     }
-    
+
     fn magnitude(&self) -> Self::Scalar {
         self.norm()
     }
-    
+
     fn magnitude2(&self) -> Self::Scalar {
         self.norm_squared()
     }
-    
+
     fn normalize(&self) -> Self {
         self.normalize()
     }
@@ -91,19 +91,19 @@ impl InnerSpace for Vector3<f64> {
 
 impl InnerSpace for Vector4<f64> {
     type Scalar = f64;
-    
+
     fn dot(&self, other: &Self) -> Self::Scalar {
         na::Vector4::dot(self, other)
     }
-    
+
     fn magnitude(&self) -> Self::Scalar {
         self.norm()
     }
-    
+
     fn magnitude2(&self) -> Self::Scalar {
         self.norm_squared()
     }
-    
+
     fn normalize(&self) -> Self {
         self.normalize()
     }
@@ -134,15 +134,15 @@ impl ElementWise for Vector3<f64> {
     fn add_element_wise(&self, scalar: f64) -> Self {
         self.add_scalar(scalar)
     }
-    
+
     fn sub_element_wise(&self, scalar: f64) -> Self {
         self.add_scalar(-scalar)
     }
-    
+
     fn mul_element_wise(&self, scalar: f64) -> Self {
         self * scalar
     }
-    
+
     fn div_element_wise(&self, scalar: f64) -> Self {
         self / scalar
     }
@@ -152,15 +152,15 @@ impl ElementWise for Vector4<f64> {
     fn add_element_wise(&self, scalar: f64) -> Self {
         self.add_scalar(scalar)
     }
-    
+
     fn sub_element_wise(&self, scalar: f64) -> Self {
         self.add_scalar(-scalar)
     }
-    
+
     fn mul_element_wise(&self, scalar: f64) -> Self {
         self * scalar
     }
-    
+
     fn div_element_wise(&self, scalar: f64) -> Self {
         self / scalar
     }
@@ -176,7 +176,7 @@ impl SquareMatrix for Matrix4<f64> {
     fn from_scale(scale: f64) -> Self {
         Matrix4::new_scaling(scale)
     }
-    
+
     fn from_nonuniform_scale(x: f64, y: f64, z: f64) -> Self {
         Matrix4::new_nonuniform_scaling(&Vector3::new(x, y, z))
     }

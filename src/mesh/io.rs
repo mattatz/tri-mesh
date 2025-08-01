@@ -30,7 +30,7 @@ impl Mesh {
             Some(indices) => indices.len() / 3,
             None => no_vertices / 3,
         };
-        
+
         let mesh = Mesh {
             connectivity_info: ConnectivityInfo::new(no_vertices, no_faces),
         };
@@ -38,7 +38,8 @@ impl Mesh {
         // Create vertices
         for i in 0..no_vertices {
             let pos = input.positions.get(i).unwrap();
-            mesh.connectivity_info.new_vertex(vec3(pos[0], pos[1], pos[2]));
+            mesh.connectivity_info
+                .new_vertex(vec3(pos[0], pos[1], pos[2]));
         }
 
         let mut twins = HashMap::<(VertexID, VertexID), HalfEdgeID>::new();
@@ -122,21 +123,23 @@ impl Mesh {
                 indices.push(index as u32);
             }
         }
-        
-        let positions: Vec<[f64; 3]> = self.vertex_iter()
+
+        let positions: Vec<[f64; 3]> = self
+            .vertex_iter()
             .map(|vertex_id| {
                 let pos = self.vertex_position(vertex_id);
                 [pos.x, pos.y, pos.z]
             })
             .collect();
-            
-        let normals: Vec<[f64; 3]> = self.vertex_iter()
+
+        let normals: Vec<[f64; 3]> = self
+            .vertex_iter()
             .map(|vertex_id| {
                 let normal = self.vertex_normal(vertex_id);
                 [normal.x, normal.y, normal.z]
             })
             .collect();
-        
+
         TriMesh {
             indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
@@ -186,19 +189,19 @@ mod tests {
                 let i0 = indices.get(face * 3).unwrap();
                 let i1 = indices.get(face * 3 + 1).unwrap();
                 let i2 = indices.get(face * 3 + 2).unwrap();
-                
+
                 let id0 = unsafe { VertexID::new(i0 as u32) };
                 let id1 = unsafe { VertexID::new(i1 as u32) };
                 let id2 = unsafe { VertexID::new(i2 as u32) };
-                
+
                 let p0 = m.positions.get(i0).unwrap();
                 let p1 = m.positions.get(i1).unwrap();
                 let p2 = m.positions.get(i2).unwrap();
-                
+
                 let mesh_p0 = mesh.vertex_position(id0);
                 let mesh_p1 = mesh.vertex_position(id1);
                 let mesh_p2 = mesh.vertex_position(id2);
-                
+
                 assert!((vec3(p0[0], p0[1], p0[2]) - mesh_p0).magnitude() < 0.001);
                 assert!((vec3(p1[0], p1[1], p1[2]) - mesh_p1).magnitude() < 0.001);
                 assert!((vec3(p2[0], p2[1], p2[2]) - mesh_p2).magnitude() < 0.001);
