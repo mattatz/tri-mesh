@@ -12,7 +12,7 @@ impl Mesh {
                 return *vid;
             }
             let p = other.vertex_position(vertex_id);
-            let vid = mesh.add_vertex(p.clone());
+            let vid = mesh.add_vertex(p);
             mapping.insert(vertex_id, vid);
             vid
         };
@@ -78,7 +78,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::TriMesh;
+    use crate::types::TriMesh;
 
     #[test]
     fn test_sphere_sphere_append() {

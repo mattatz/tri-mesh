@@ -189,13 +189,11 @@ impl ConnectivityInfo {
             .get(vertex_id)
             .unwrap()
             .halfedge
-            .clone()
     }
 
     pub fn halfedge(&self, halfedge_id: HalfEdgeID) -> Option<HalfEdge> {
         RefCell::borrow(&self.halfedges)
-            .get(halfedge_id)
-            .and_then(|halfedge| Some(halfedge.clone()))
+            .get(halfedge_id).copied()
     }
 
     pub fn face_halfedge(&self, face_id: FaceID) -> Option<HalfEdgeID> {
@@ -203,7 +201,6 @@ impl ConnectivityInfo {
             .get(face_id)
             .unwrap()
             .halfedge
-            .clone()
     }
 
     pub fn position(&self, vertex_id: VertexID) -> Vec3 {
@@ -312,7 +309,7 @@ impl<K: ID + 'static, V> IDMap<K, V> {
         Box::new(
             (0..self.values.len() as u32)
                 .map(|i| unsafe { K::new(i) })
-                .filter(move |i| !free.contains(&i)),
+                .filter(move |i| !free.contains(i)),
         )
     }
 }

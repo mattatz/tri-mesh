@@ -11,7 +11,7 @@ impl Mesh {
 
     /// Returns the normal of the vertex given as the average of the normals of the neighbouring faces.
     pub fn vertex_normal(&self, vertex_id: VertexID) -> Vec3 {
-        let mut normal = Vec3::zero();
+        let mut normal = Vec3::zeros();
         for halfedge_id in self.vertex_halfedge_iter(vertex_id) {
             if let Some(face_id) = self.walker_from_halfedge(halfedge_id).face_id() {
                 normal += self.face_normal(face_id)

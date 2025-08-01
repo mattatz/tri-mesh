@@ -89,10 +89,10 @@ fn is_at_intersection(
             let face_id11 = walker1.as_twin().face_id().unwrap();
             let face_id20 = walker2.face_id().unwrap();
             let face_id21 = walker2.as_twin().face_id().unwrap();
-            if (!face_and_face_overlaps(&mesh1, face_id10, mesh2, face_id20)
-                && !face_and_face_overlaps(&mesh1, face_id10, mesh2, face_id21))
-                || (!face_and_face_overlaps(&mesh1, face_id11, mesh2, face_id20)
-                    && !face_and_face_overlaps(&mesh1, face_id11, mesh2, face_id21))
+            if (!face_and_face_overlaps(mesh1, face_id10, mesh2, face_id20)
+                && !face_and_face_overlaps(mesh1, face_id10, mesh2, face_id21))
+                || (!face_and_face_overlaps(mesh1, face_id11, mesh2, face_id20)
+                    && !face_and_face_overlaps(mesh1, face_id11, mesh2, face_id21))
             {
                 return true;
             }
@@ -139,7 +139,7 @@ fn split_at_intersections(
                     new_intersections.insert((Primitive::Edge(edge), *id2), *point);
                 }
                 Primitive::Face(split_face_id) => {
-                    let vertex_id = mesh1.split_face(split_face_id, point.clone());
+                    let vertex_id = mesh1.split_face(split_face_id, *point);
                     insert_faces(&mut face_splits1, mesh1, *face_id, vertex_id);
                     for halfedge_id in mesh1.vertex_halfedge_iter(vertex_id) {
                         new_edges1.push(halfedge_id);
@@ -156,7 +156,7 @@ fn split_at_intersections(
                     new_intersections.insert((*id1, Primitive::Edge(edge)), *point);
                 }
                 Primitive::Face(split_face_id) => {
-                    let vertex_id = mesh2.split_face(split_face_id, point.clone());
+                    let vertex_id = mesh2.split_face(split_face_id, *point);
                     insert_faces(&mut face_splits2, mesh2, *face_id, vertex_id);
                     for halfedge_id in mesh2.vertex_halfedge_iter(vertex_id) {
                         new_edges2.push(halfedge_id);
@@ -182,9 +182,7 @@ fn split_at_intersections(
                         let (v0, v1) = mesh1.edge_vertices(split_edge);
                         let vertex_id = mesh1.split_edge(split_edge, point);
 
-                        if !edge_splits1.contains_key(&edge) {
-                            edge_splits1.insert(edge, HashSet::new());
-                        }
+                        edge_splits1.entry(edge).or_insert_with(HashSet::new);
                         let list = edge_splits1.get_mut(&edge).unwrap();
 
                         list.remove(&split_edge);
@@ -216,9 +214,7 @@ fn split_at_intersections(
                         let (v0, v1) = mesh2.edge_vertices(split_edge);
                         let vertex_id = mesh2.split_edge(split_edge, point);
 
-                        if !edge_splits2.contains_key(&edge) {
-                            edge_splits2.insert(edge, HashSet::new());
-                        }
+                        edge_splits2.entry(edge).or_insert_with(HashSet::new);
                         let list = edge_splits2.get_mut(&edge).unwrap();
 
                         list.remove(&split_edge);
@@ -243,7 +239,7 @@ fn split_at_intersections(
         };
         stitches.push((v0, v1));
     }
-    if new_edges1.len() > 0 && new_edges2.len() > 0 {
+    if !new_edges1.is_empty() && !new_edges2.is_empty() {
         Some((new_edges1, new_edges2))
     } else {
         None
@@ -294,9 +290,7 @@ fn insert_faces(
     face_id: FaceID,
     vertex_id: VertexID,
 ) {
-    if !face_list.contains_key(&face_id) {
-        face_list.insert(face_id, HashSet::new());
-    }
+    face_list.entry(face_id).or_default();
     let list = face_list.get_mut(&face_id).unwrap();
 
     let mut iter = mesh.vertex_halfedge_iter(vertex_id);
@@ -434,7 +428,7 @@ fn find_intersections_between_edge_face(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_clone_subset() {
@@ -479,20 +473,14 @@ mod tests {
     #[test]
     fn test_face_face_stitching_at_edge() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, -2.0),
-                vec3(-2.0, 0.0, 2.0),
-                vec3(2.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let mut mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, 2.0),
-                vec3(-2.0, 0.0, -2.0),
-                vec3(-2.0, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, 2.0], [-2.0, 0.0, -2.0], [-2.0, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -518,20 +506,14 @@ mod tests {
     #[test]
     fn test_face_face_stitching_at_mid_edge() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, -2.0),
-                vec3(-2.0, 0.0, 2.0),
-                vec3(2.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let mut mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, 1.0),
-                vec3(-2.0, 0.0, -1.0),
-                vec3(-2.0, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, 1.0], [-2.0, 0.0, -1.0], [-2.0, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -655,23 +637,23 @@ mod tests {
         });
 
         assert_eq!(result.len(), 2);
-        assert!(result.iter().find(|cc| cc.len() == 2).is_some());
-        assert!(result.iter().find(|cc| cc.len() == 10).is_some());
+        assert!(result.iter().any(|cc| cc.len() == 2));
+        assert!(result.iter().any(|cc| cc.len() == 10));
     }
 
     #[test]
     fn test_is_at_intersection() {
         let mesh1 = crate::test_utility::cube();
         let mesh2: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 1, 2, 0, 2, 3, 0, 3, 4]),
+            indices: Some(Indices::U8(vec![0, 1, 2, 0, 2, 3, 0, 3, 4])),
             positions: Positions::F64(vec![
-                vec3(-1.0, 1.0, 1.0),
-                vec3(-1.0, -1.0, 1.0),
-                vec3(1.0, -1.0, -1.0),
-                vec3(1.0, 1.0, -1.0),
-                vec3(0.0, 2.0, 0.0),
+                [-1.0, 1.0, 1.0],
+                [-1.0, -1.0, 1.0],
+                [1.0, -1.0, -1.0],
+                [1.0, 1.0, -1.0],
+                [0.0, 2.0, 0.0],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
         let mut map = HashMap::new();
@@ -690,8 +672,8 @@ mod tests {
         });
 
         assert_eq!(result.len(), 2);
-        assert!(result.iter().find(|cc| cc.len() == 1).is_some());
-        assert!(result.iter().find(|cc| cc.len() == 2).is_some());
+        assert!(result.iter().any(|cc| cc.len() == 1));
+        assert!(result.iter().any(|cc| cc.len() == 2));
     }
 
     #[test]
@@ -723,11 +705,8 @@ mod tests {
     fn test_finding_face_edge_intersections() {
         let mesh1 = create_simple_mesh_x_z();
         let mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.5, -0.5, 0.0),
-                vec3(0.5, 0.5, 0.75),
-                vec3(0.5, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.5, -0.5, 0.0], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -818,22 +797,16 @@ mod tests {
     #[test]
     fn test_split_face_two_times() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, -2.0),
-                vec3(-2.0, 0.0, 2.0),
-                vec3(2.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let area1 = mesh1.face_area(mesh1.face_iter().next().unwrap());
 
         let mut mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.2, -0.2, 0.5),
-                vec3(0.5, 0.5, 0.75),
-                vec3(0.5, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.2, -0.2, 0.5], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -852,7 +825,7 @@ mod tests {
 
         let mut area_test1 = 0.0;
         for face_id in mesh1.face_iter() {
-            area_test1 = area_test1 + mesh1.face_area(face_id);
+            area_test1 += mesh1.face_area(face_id);
         }
         assert!((area1 - area_test1).abs() < 0.001);
 
@@ -870,20 +843,14 @@ mod tests {
     #[test]
     fn test_split_edge_two_times() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 2.0),
-                vec3(2.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let mut mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, -0.2, 0.5),
-                vec3(0.0, -0.2, 1.5),
-                vec3(0.0, 1.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, -0.2, 0.5], [0.0, -0.2, 1.5], [0.0, 1.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -914,21 +881,15 @@ mod tests {
     #[test]
     fn test_face_face_splitting() {
         let mut mesh1: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(-2.0, 0.0, -2.0),
-                vec3(-2.0, 0.0, 2.0),
-                vec3(2.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[-2.0, 0.0, -2.0], [-2.0, 0.0, 2.0], [2.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
 
         let mut mesh2: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.2, -0.2, 0.5),
-                vec3(0.5, 0.5, 0.75),
-                vec3(0.5, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.2, -0.2, 0.5], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -970,11 +931,8 @@ mod tests {
 
     fn create_single_triangle() -> Mesh {
         TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.5, 0.0, 0.25),
-                vec3(0.5, 0.5, 0.75),
-                vec3(0.5, 0.5, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.5, 0.0, 0.25], [0.5, 0.5, 0.75], [0.5, 0.5, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into()
@@ -983,17 +941,17 @@ mod tests {
     fn create_simple_mesh_x_z() -> Mesh {
         let indices = vec![0, 1, 2, 2, 1, 3, 3, 1, 4, 3, 4, 5];
         let positions = vec![
-            vec3(0.0, 0.0, 0.0),
-            vec3(0.0, 0.0, 1.0),
-            vec3(1.0, 0.0, 0.5),
-            vec3(1.0, 0.0, 1.5),
-            vec3(0.0, 0.0, 2.0),
-            vec3(1.0, 0.0, 2.5),
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 0.0, 0.5],
+            [1.0, 0.0, 1.5],
+            [0.0, 0.0, 2.0],
+            [1.0, 0.0, 2.5],
         ];
         TriMesh {
-            indices: Indices::U32(indices),
+            indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
-            ..Default::default()
+            normals: None,
         }
         .into()
     }
@@ -1001,17 +959,17 @@ mod tests {
     fn create_simple_mesh_y_z() -> Mesh {
         let indices = vec![0, 1, 2, 2, 1, 3, 3, 1, 4, 3, 4, 5];
         let positions = vec![
-            vec3(0.5, -0.5, 0.0),
-            vec3(0.5, -0.5, 1.0),
-            vec3(0.5, 0.5, 0.5),
-            vec3(0.5, 0.5, 1.5),
-            vec3(0.5, -0.5, 2.0),
-            vec3(0.5, 0.5, 2.5),
+            [0.5, -0.5, 0.0],
+            [0.5, -0.5, 1.0],
+            [0.5, 0.5, 0.5],
+            [0.5, 0.5, 1.5],
+            [0.5, -0.5, 2.0],
+            [0.5, 0.5, 2.5],
         ];
         TriMesh {
-            indices: Indices::U32(indices),
+            indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
-            ..Default::default()
+            normals: None,
         }
         .into()
     }
@@ -1019,17 +977,17 @@ mod tests {
     fn create_shifted_simple_mesh_y_z() -> Mesh {
         let indices = vec![0, 1, 2, 2, 1, 3, 3, 1, 4, 3, 4, 5];
         let positions = vec![
-            vec3(0.5, -0.5, -0.2),
-            vec3(0.5, -0.5, 0.8),
-            vec3(0.5, 0.5, 0.3),
-            vec3(0.5, 0.5, 1.3),
-            vec3(0.5, -0.5, 1.8),
-            vec3(0.5, 0.5, 2.3),
+            [0.5, -0.5, -0.2],
+            [0.5, -0.5, 0.8],
+            [0.5, 0.5, 0.3],
+            [0.5, 0.5, 1.3],
+            [0.5, -0.5, 1.8],
+            [0.5, 0.5, 2.3],
         ];
         TriMesh {
-            indices: Indices::U32(indices),
+            indices: Some(Indices::U32(indices)),
             positions: Positions::F64(positions),
-            ..Default::default()
+            normals: None,
         }
         .into()
     }

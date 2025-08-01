@@ -126,7 +126,7 @@ impl<'a> Walker<'a> {
         Walker {
             current: None,
             current_info: None,
-            connectivity_info: connectivity_info,
+            connectivity_info,
         }
     }
 
@@ -235,7 +235,7 @@ impl<'a> Walker<'a> {
     /// or if the walker has walked outside of the mesh at some point.
     pub fn previous_id(&self) -> Option<HalfEdgeID> {
         if let Some(next_id) = self.next_id() {
-            Walker::new(&self.connectivity_info)
+            Walker::new(self.connectivity_info)
                 .into_halfedge_walker(next_id)
                 .next_id()
         } else {

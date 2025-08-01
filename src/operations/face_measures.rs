@@ -23,7 +23,7 @@ impl Mesh {
         walker.as_next();
         let v1 = self.vertex_position(walker.vertex_id().unwrap()) - p0;
 
-        v0.cross(v1)
+        v0.cross(&v1)
     }
 
     /// Returns the normal of the face.

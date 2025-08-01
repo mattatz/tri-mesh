@@ -30,9 +30,7 @@ impl Mesh {
         let mut walker = self.walker_from_halfedge(halfedge_id);
         let face_id = walker
             .face_id()
-            .ok_or(Error::ActionWillResultInInvalidMesh(format!(
-                "Trying to flip edge on boundary"
-            )))?;
+            .ok_or(Error::ActionWillResultInInvalidMesh("Trying to flip edge on boundary".to_string()))?;
         let next_id = walker.next_id().unwrap();
         let previous_id = walker.previous_id().unwrap();
         let v0 = walker.vertex_id().unwrap();
@@ -44,16 +42,14 @@ impl Mesh {
         let twin_id = walker.halfedge_id().unwrap();
         let twin_face_id = walker
             .face_id()
-            .ok_or(Error::ActionWillResultInInvalidMesh(format!(
-                "Trying to flip edge on boundary"
-            )))?;
+            .ok_or(Error::ActionWillResultInInvalidMesh("Trying to flip edge on boundary".to_string()))?;
         let twin_next_id = walker.next_id().unwrap();
         let twin_previous_id = walker.previous_id().unwrap();
         let v1 = walker.vertex_id().unwrap();
         let v2 = walker.as_next().vertex_id().unwrap();
 
         if self.connecting_edge(v2, v3).is_some() {
-            Err(Error::ActionWillResultInInvalidMesh ( format!("Trying to flip edge which will connect two vertices that are already connected by another edge")))?;
+            Err(Error::ActionWillResultInInvalidMesh ( "Trying to flip edge which will connect two vertices that are already connected by another edge".to_string()))?;
         }
 
         self.connectivity_info
@@ -453,13 +449,13 @@ impl Mesh {
                 };
 
             if self.walker_from_vertex(vertex_id1).halfedge_id().unwrap() == halfedge_id2 {
-                let new_edge = find_new_edge_connectivity(&self, vertex_id1);
+                let new_edge = find_new_edge_connectivity(self, vertex_id1);
                 self.connectivity_info
                     .set_vertex_halfedge(vertex_id1, new_edge);
                 self.remove_vertex_if_lonely(vertex_id1);
             }
             if self.walker_from_vertex(vertex_id2).halfedge_id().unwrap() == halfedge_id1 {
-                let new_edge = find_new_edge_connectivity(&self, vertex_id2);
+                let new_edge = find_new_edge_connectivity(self, vertex_id2);
                 self.connectivity_info
                     .set_vertex_halfedge(vertex_id2, new_edge);
                 self.remove_vertex_if_lonely(vertex_id2);
@@ -477,7 +473,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_flip_edge() {
@@ -503,7 +499,7 @@ mod tests {
                 let twin = mesh.walker_from_halfedge(edge).twin_id().unwrap();
                 assert!(edge == halfedge_id || twin == halfedge_id,
                         "Flipped edge {} or flipped edge twin {} should be equal to before flipped edge id {}", edge, twin, halfedge_id);
-                no_flips = no_flips + 1;
+                no_flips += 1;
             }
         }
         assert_eq!(no_edges, mesh.no_halfedges());
@@ -534,7 +530,7 @@ mod tests {
                 let twin = mesh.walker_from_halfedge(edge).twin_id().unwrap();
                 assert!(edge == halfedge_id || twin == halfedge_id,
                         "Flipped edge {} or flipped edge twin {} should be equal to before flipped edge id {}", edge, twin, halfedge_id);
-                no_flips = no_flips + 1;
+                no_flips += 1;
             }
         }
         assert_eq!(no_edges, mesh.no_halfedges());
@@ -546,7 +542,7 @@ mod tests {
         let mut mesh = crate::test_utility::triangle();
         for halfedge_id in mesh.halfedge_iter() {
             if mesh.walker_from_halfedge(halfedge_id).face_id().is_some() {
-                mesh.split_edge(halfedge_id, vec3(-1.0, -1.0, -1.0));
+                mesh.split_edge(halfedge_id, Vec3::new(-1.0, -1.0, -1.0));
 
                 assert_eq!(mesh.no_vertices(), 4);
                 assert_eq!(mesh.no_halfedges(), 2 * 3 + 4);
@@ -585,7 +581,7 @@ mod tests {
         for halfedge_id in mesh.halfedge_iter() {
             let mut walker = mesh.walker_from_halfedge(halfedge_id);
             if walker.face_id().is_some() && walker.as_twin().face_id().is_some() {
-                let vertex_id = mesh.split_edge(halfedge_id, vec3(-1.0, -1.0, -1.0));
+                let vertex_id = mesh.split_edge(halfedge_id, Vec3::new(-1.0, -1.0, -1.0));
                 assert_eq!(mesh.no_vertices(), 5);
                 assert_eq!(mesh.no_halfedges(), 4 * 3 + 4);
                 assert_eq!(mesh.no_faces(), 4);
@@ -617,7 +613,7 @@ mod tests {
         let mut mesh = crate::test_utility::triangle();
         let face_id = mesh.face_iter().next().unwrap();
 
-        let vertex_id = mesh.split_face(face_id, vec3(-1.0, -1.0, -1.0));
+        let vertex_id = mesh.split_face(face_id, Vec3::new(-1.0, -1.0, -1.0));
 
         assert_eq!(mesh.no_vertices(), 4);
         assert_eq!(mesh.no_halfedges(), 3 * 3 + 3);
@@ -652,15 +648,15 @@ mod tests {
     #[test]
     fn test_collapse_edge_on_boundary1() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4]),
+            indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(1.0, 0.0, 1.0),
-                vec3(2.0, 0.0, 0.5),
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 0.0, 1.0],
+                [2.0, 0.0, 0.5],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
 
@@ -686,14 +682,14 @@ mod tests {
     #[test]
     fn test_collapse_edge_on_boundary2() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 2, 3, 0, 3, 1]),
+            indices: Some(Indices::U8(vec![0, 2, 3, 0, 3, 1])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(1.0, 0.0, 1.0),
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 0.0, 1.0],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
         for halfedge_id in mesh.halfedge_iter() {
@@ -730,15 +726,15 @@ mod tests {
     #[test]
     fn test_recursive_collapse_edge() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4]),
+            indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 2, 3, 4])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(1.0, 0.0, 1.0),
-                vec3(2.0, 0.0, 0.5),
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 0.0],
+                [1.0, 0.0, 1.0],
+                [2.0, 0.0, 0.5],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
 
@@ -760,18 +756,19 @@ mod tests {
     fn test_remove_face_when_unconnected() {
         let mut mesh: Mesh = TriMesh {
             positions: Positions::F64(vec![
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, -1.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, -1.0),
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0],
             ]),
+            normals: None,
             ..Default::default()
         }
         .into();
 
-        let faces: Vec<FaceID> = mesh.face_iter().into_iter().collect();
+        let faces: Vec<FaceID> = mesh.face_iter().collect();
 
         mesh.remove_face(faces[0]);
 
@@ -811,15 +808,15 @@ mod tests {
 
     #[test]
     fn test_add_face() {
-        let mut mesh = Mesh::new(&three_d_asset::TriMesh::default());
+        let mut mesh = Mesh::new(&TriMesh::default());
         for i in 0..3 {
-            let vertex_id1 = mesh.add_vertex(vec3(1.0, i as f64, 0.0));
-            let vertex_id2 = mesh.add_vertex(vec3(0.0, i as f64, 0.0));
-            let vertex_id3 = mesh.add_vertex(vec3(0.0, i as f64, 1.0));
+            let vertex_id1 = mesh.add_vertex(Vec3::new(1.0, i as f64, 0.0));
+            let vertex_id2 = mesh.add_vertex(Vec3::new(0.0, i as f64, 0.0));
+            let vertex_id3 = mesh.add_vertex(Vec3::new(0.0, i as f64, 1.0));
             mesh.add_face(vertex_id1, vertex_id2, vertex_id3).unwrap();
-            let vertex_id4 = mesh.add_vertex(vec3(1.0, i as f64, 1.0));
+            let vertex_id4 = mesh.add_vertex(Vec3::new(1.0, i as f64, 1.0));
             mesh.add_face(vertex_id1, vertex_id3, vertex_id4).unwrap();
-            let vertex_id5 = mesh.add_vertex(vec3(2.0, i as f64, 2.0));
+            let vertex_id5 = mesh.add_vertex(Vec3::new(2.0, i as f64, 2.0));
             assert!(mesh.add_face(vertex_id1, vertex_id5, vertex_id4).is_err());
             mesh.add_face(vertex_id1, vertex_id4, vertex_id5).unwrap();
         }

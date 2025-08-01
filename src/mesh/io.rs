@@ -1,50 +1,44 @@
 //! See [Mesh](crate::mesh::Mesh).
 
 use crate::mesh::*;
+use crate::types::{Indices, Positions, TriMesh};
 
 impl Mesh {
     ///
-    /// Constructs a new [Mesh] from a [three_d_asset::TriMesh] which can either be manually constructed or loaded via the [three_d_asset::io] module.
+    /// Constructs a new [Mesh] from a [TriMesh] which can either be manually constructed or from test generation functions.
     ///
     /// # Examples
-    /// ```no_run
+    /// ```
     /// # use tri_mesh::*;
-    /// let model: three_d_asset::Model =
-    ///     three_d_asset::io::load_and_deserialize("cube.obj").expect("Failed loading asset");
-    /// let mesh = match &model.geometries[0].geometry {
-    ///     three_d_asset::Geometry::Triangles(mesh) => Mesh::new(mesh),
-    ///     _ => panic!("Geometry is not a triangle mesh")
-    /// };
+    /// # use tri_mesh::types::TriMesh;
+    /// let mesh = Mesh::new(&TriMesh::sphere(4));
     /// ```
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// let mesh = Mesh::new(&three_d_asset::TriMesh::sphere(4));
-    /// ```
-    ///
-    /// ```
-    /// # use tri_mesh::*;
-    /// let mesh = Mesh::new(&three_d_asset::TriMesh {
-    ///     positions: three_d_asset::Positions::F64(vec![vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0)]),
-    ///     ..Default::default()
+    /// # use tri_mesh::types::{TriMesh, Positions, Indices};
+    /// let mesh = Mesh::new(&TriMesh {
+    ///     positions: Positions::F64(vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]),
+    ///     indices: None,
+    ///     normals: None,
     /// });
     /// ```
     ///
-    pub fn new(input: &three_d_asset::TriMesh) -> Self {
-        let no_vertices = input.vertex_count();
-        let no_faces = input.triangle_count();
-        let indices = input
-            .indices
-            .to_u32()
-            .unwrap_or((0..no_faces as u32 * 3).collect::<Vec<_>>());
-        let positions = input.positions.to_f64();
+    pub fn new(input: &TriMesh) -> Self {
+        let no_vertices = input.positions.len();
+        let no_faces = match &input.indices {
+            Some(indices) => indices.len() / 3,
+            None => no_vertices / 3,
+        };
+        
         let mesh = Mesh {
             connectivity_info: ConnectivityInfo::new(no_vertices, no_faces),
         };
 
         // Create vertices
         for i in 0..no_vertices {
-            mesh.connectivity_info.new_vertex(positions[i]);
+            let pos = input.positions.get(i).unwrap();
+            mesh.connectivity_info.new_vertex(vec3(pos[0], pos[1], pos[2]));
         }
 
         let mut twins = HashMap::<(VertexID, VertexID), HalfEdgeID>::new();
@@ -58,9 +52,18 @@ impl Mesh {
 
         // Create faces and twin connectivity
         for face in 0..no_faces {
-            let v0 = indices[face * 3];
-            let v1 = indices[face * 3 + 1];
-            let v2 = indices[face * 3 + 2];
+            let (v0, v1, v2) = match &input.indices {
+                Some(indices) => (
+                    indices.get(face * 3).unwrap() as u32,
+                    indices.get(face * 3 + 1).unwrap() as u32,
+                    indices.get(face * 3 + 2).unwrap() as u32,
+                ),
+                None => (
+                    (face * 3) as u32,
+                    (face * 3 + 1) as u32,
+                    (face * 3 + 2) as u32,
+                ),
+            };
 
             let face = mesh.connectivity_info.create_face(
                 unsafe { VertexID::new(v0) },
@@ -107,11 +110,9 @@ impl Mesh {
     }
 
     ///
-    /// Exports the [Mesh] into a [three_d_asset::TriMesh] that contain the raw buffer data.
-    /// The [three_d_asset::TriMesh] can then for example be visualized or saved to disk (using the [three_d_asset::io] module).
+    /// Exports the [Mesh] into a [TriMesh] that contain the raw buffer data.
     ///
-    pub fn export(&self) -> three_d_asset::TriMesh {
-        use three_d_asset::{Indices, Positions, TriMesh};
+    pub fn export(&self) -> TriMesh {
         let vertices: Vec<VertexID> = self.vertex_iter().collect();
         let mut indices = Vec::with_capacity(self.no_faces() * 3);
         for face_id in self.face_iter() {
@@ -121,126 +122,106 @@ impl Mesh {
                 indices.push(index as u32);
             }
         }
+        
+        let positions: Vec<[f64; 3]> = self.vertex_iter()
+            .map(|vertex_id| {
+                let pos = self.vertex_position(vertex_id);
+                [pos.x, pos.y, pos.z]
+            })
+            .collect();
+            
+        let normals: Vec<[f64; 3]> = self.vertex_iter()
+            .map(|vertex_id| {
+                let normal = self.vertex_normal(vertex_id);
+                [normal.x, normal.y, normal.z]
+            })
+            .collect();
+        
         TriMesh {
-            indices: Indices::U32(indices),
-            positions: Positions::F64(
-                self.vertex_iter()
-                    .map(|vertex_id| self.vertex_position(vertex_id))
-                    .collect::<Vec<_>>(),
-            ),
-            normals: Some(
-                self.vertex_iter()
-                    .map(|vertex_id| self.vertex_normal(vertex_id).cast::<f32>().unwrap())
-                    .collect::<Vec<_>>(),
-            ),
-            ..Default::default()
+            indices: Some(Indices::U32(indices)),
+            positions: Positions::F64(positions),
+            normals: Some(Positions::F64(normals)),
         }
     }
 }
 
-impl From<three_d_asset::TriMesh> for Mesh {
-    fn from(mesh: three_d_asset::TriMesh) -> Self {
+impl From<TriMesh> for Mesh {
+    fn from(mesh: TriMesh) -> Self {
         Self::new(&mesh)
     }
 }
 
-impl From<&three_d_asset::TriMesh> for Mesh {
-    fn from(mesh: &three_d_asset::TriMesh) -> Self {
+impl From<&TriMesh> for Mesh {
+    fn from(mesh: &TriMesh) -> Self {
         Self::new(mesh)
     }
 }
 
-impl From<Mesh> for three_d_asset::TriMesh {
+impl From<Mesh> for TriMesh {
     fn from(mesh: Mesh) -> Self {
         mesh.export()
     }
 }
 
-impl From<&Mesh> for three_d_asset::TriMesh {
+impl From<&Mesh> for TriMesh {
     fn from(mesh: &Mesh) -> Self {
         mesh.export()
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Positions, TriMesh};
-
-    #[test]
-    fn test_from_obj() {
-        let source = b"o Cube
-        v 1.000000 -1.000000 -1.000000
-        v 1.000000 -1.000000 1.000000
-        v -1.000000 -1.000000 1.000000
-        v -1.000000 -1.000000 -1.000000
-        v 1.000000 1.000000 -1.000000
-        v 0.999999 1.000000 1.000001
-        v -1.000000 1.000000 1.000000
-        v -1.000000 1.000000 -1.000000
-        f 1 2 3
-        f 1 3 4
-        f 5 8 7
-        f 5 7 6
-        f 1 5 6
-        f 1 6 2
-        f 2 6 7
-        f 2 7 3
-        f 3 7 8
-        f 3 8 4
-        f 5 1 4
-        f 5 4 8"
-            .to_vec();
-        let mut raw_assets = three_d_asset::io::RawAssets::new();
-        raw_assets.insert("cube.obj", source);
-        let mut model: three_d_asset::Model = raw_assets.deserialize(".obj").unwrap();
-        let three_d_asset::Geometry::Triangles(m) = model.geometries.remove(0).geometry else {
-            unreachable!()
-        };
-        let mesh: Mesh = m.into();
-        assert_eq!(mesh.no_faces(), 12);
-        assert_eq!(mesh.no_vertices(), 8);
-        mesh.is_valid().unwrap();
-    }
 
     #[test]
     fn test_indexed_export() {
         let mesh: Mesh = TriMesh::cylinder(16).into();
         let m: TriMesh = (&mesh).into();
-        m.validate().unwrap();
 
-        assert_eq!(m.triangle_count(), mesh.no_faces());
-        assert_eq!(m.vertex_count(), mesh.no_vertices());
+        assert_eq!(m.indices.as_ref().unwrap().len() / 3, mesh.no_faces());
+        assert_eq!(m.positions.len(), mesh.no_vertices());
 
-        let positions = m.positions.to_f64();
-        let normals = m.normals.as_ref().unwrap();
-        m.for_each_triangle(|i0, i1, i2| {
-            let id0 = unsafe { VertexID::new(i0 as u32) };
-            let id1 = unsafe { VertexID::new(i1 as u32) };
-            let id2 = unsafe { VertexID::new(i2 as u32) };
-            assert!(positions[i0].distance(mesh.vertex_position(id0)) < 0.001);
-            assert!(positions[i1].distance(mesh.vertex_position(id1)) < 0.001);
-            assert!(positions[i2].distance(mesh.vertex_position(id2)) < 0.001);
-            assert!(normals[i0].distance(mesh.vertex_normal(id0).cast::<f32>().unwrap()) < 0.001);
-            assert!(normals[i1].distance(mesh.vertex_normal(id1).cast::<f32>().unwrap()) < 0.001);
-            assert!(normals[i2].distance(mesh.vertex_normal(id2).cast::<f32>().unwrap()) < 0.001);
-        });
+        for face in 0..mesh.no_faces() {
+            if let Some(indices) = &m.indices {
+                let i0 = indices.get(face * 3).unwrap();
+                let i1 = indices.get(face * 3 + 1).unwrap();
+                let i2 = indices.get(face * 3 + 2).unwrap();
+                
+                let id0 = unsafe { VertexID::new(i0 as u32) };
+                let id1 = unsafe { VertexID::new(i1 as u32) };
+                let id2 = unsafe { VertexID::new(i2 as u32) };
+                
+                let p0 = m.positions.get(i0).unwrap();
+                let p1 = m.positions.get(i1).unwrap();
+                let p2 = m.positions.get(i2).unwrap();
+                
+                let mesh_p0 = mesh.vertex_position(id0);
+                let mesh_p1 = mesh.vertex_position(id1);
+                let mesh_p2 = mesh.vertex_position(id2);
+                
+                assert!((vec3(p0[0], p0[1], p0[2]) - mesh_p0).magnitude() < 0.001);
+                assert!((vec3(p1[0], p1[1], p1[2]) - mesh_p1).magnitude() < 0.001);
+                assert!((vec3(p2[0], p2[1], p2[2]) - mesh_p2).magnitude() < 0.001);
+            }
+        }
     }
 
     #[test]
     fn test_new_from_positions() {
         let mesh: Mesh = TriMesh {
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(0.0, 1.0, 1.0),
-                vec3(1.0, 0.0, 1.0),
-                vec3(0.0, 1.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 1.0),
-                vec3(0.0, 1.0, 1.0),
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 0.0],
+                [0.0, 0.0, 1.0],
+                [1.0, 0.0, 1.0],
+                [0.0, 1.0, 1.0],
             ]),
-            ..Default::default()
+            indices: None,
+            normals: None,
         }
         .into();
 

@@ -61,8 +61,8 @@ impl Mesh {
         visited_faces: &mut std::collections::HashMap<FaceID, bool>,
         should_flip: bool,
     ) {
-        if !visited_faces.contains_key(&face_id) {
-            visited_faces.insert(face_id, should_flip);
+        if let std::collections::hash_map::Entry::Vacant(e) = visited_faces.entry(face_id) {
+            e.insert(should_flip);
             for halfedge_id in self.face_halfedge_iter(face_id) {
                 let mut walker = self.walker_from_halfedge(halfedge_id);
                 let vertex_id = walker.vertex_id();
@@ -82,7 +82,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::TriMesh;
+    use crate::types::TriMesh;
 
     #[test]
     fn test_fix_orientation() {

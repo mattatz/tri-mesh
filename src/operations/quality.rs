@@ -10,14 +10,14 @@ impl Mesh {
     pub fn smooth_vertices(&mut self, factor: f64) {
         let mut map = HashMap::new();
         for vertex_id in self.vertex_iter() {
-            let mut avg_pos = vec3(0.0, 0.0, 0.0);
+            let mut avg_pos = Vec3::new(0.0, 0.0, 0.0);
             let mut i = 0;
             for halfedge_id in self.vertex_halfedge_iter(vertex_id) {
                 let vid = self.walker_from_halfedge(halfedge_id).vertex_id().unwrap();
-                avg_pos = avg_pos + self.vertex_position(vid);
-                i = i + 1;
+                avg_pos += self.vertex_position(vid);
+                i += 1;
             }
-            avg_pos = avg_pos / i as f64;
+            avg_pos /= i as f64;
             let p = self.vertex_position(vertex_id);
             map.insert(vertex_id, p + factor * (avg_pos - p));
         }
@@ -74,32 +74,32 @@ impl Mesh {
 
         let mut to_be_flipped = HashSet::new();
         for halfedge_id in self.halfedge_iter() {
-            insert_or_remove(&self, &mut to_be_flipped, halfedge_id);
+            insert_or_remove(self, &mut to_be_flipped, halfedge_id);
         }
 
-        while to_be_flipped.len() > 0 {
+        while !to_be_flipped.is_empty() {
             let halfedge_id = *to_be_flipped.iter().next().unwrap();
             to_be_flipped.remove(&halfedge_id);
 
             if self.flip_edge(halfedge_id).is_ok() {
                 let mut walker = self.walker_from_halfedge(halfedge_id);
                 insert_or_remove(
-                    &self,
+                    self,
                     &mut to_be_flipped,
                     walker.as_next().halfedge_id().unwrap(),
                 );
                 insert_or_remove(
-                    &self,
+                    self,
                     &mut to_be_flipped,
                     walker.as_next().halfedge_id().unwrap(),
                 );
                 insert_or_remove(
-                    &self,
+                    self,
                     &mut to_be_flipped,
                     walker.as_next().as_twin().as_next().halfedge_id().unwrap(),
                 );
                 insert_or_remove(
-                    &self,
+                    self,
                     &mut to_be_flipped,
                     walker.as_next().halfedge_id().unwrap(),
                 );
@@ -119,7 +119,7 @@ impl Mesh {
         let mut walker = self.walker_from_halfedge(haledge_id);
         let face_id1 = walker.face_id().unwrap();
         let face_id2 = walker.as_twin().face_id().unwrap();
-        self.face_normal(face_id1).dot(self.face_normal(face_id2))
+        self.face_normal(face_id1).dot(&self.face_normal(face_id2))
     }
 
     fn flip_will_invert_triangle(&self, haledge_id: HalfEdgeID) -> bool {
@@ -129,7 +129,10 @@ impl Mesh {
         let p1 = self.vertex_position(walker.as_previous().as_twin().vertex_id().unwrap());
         let p3 = self.vertex_position(walker.as_next().vertex_id().unwrap());
 
-        (p2 - p0).cross(p3 - p0).dot((p3 - p1).cross(p2 - p1)) < 0.0001
+        (p2 - p0)
+            .cross(&(p3 - p0))
+            .dot(&((p3 - p1).cross(&(p2 - p1))))
+            < 0.0001
     }
 
     fn flip_will_improve_quality(&self, haledge_id: HalfEdgeID) -> bool {
@@ -150,7 +153,7 @@ fn triangle_quality(p0: &Vec3, p1: &Vec3, p2: &Vec3) -> f64 {
     let length02 = (p0 - p2).magnitude();
     let length12 = (p1 - p2).magnitude();
     let perimiter = length01 + length02 + length12;
-    let area = (p1 - p0).cross(p2 - p0).magnitude();
+    let area = (p1 - p0).cross(&(p2 - p0)).magnitude();
     let inscribed_radius = 2.0 * area / perimiter;
     let circumscribed_radius = length01 * length02 * length12 / (4.0 * area);
     circumscribed_radius / inscribed_radius
@@ -159,19 +162,19 @@ fn triangle_quality(p0: &Vec3, p1: &Vec3, p2: &Vec3) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_collapse_small_faces() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 2, 3, 0, 3, 1, 0, 1, 2]),
+            indices: Some(Indices::U8(vec![0, 2, 3, 0, 3, 1, 0, 1, 2])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.1),
-                vec3(0.1, 0.0, -0.1),
-                vec3(-1.0, 0.0, -0.5),
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 0.1],
+                [0.1, 0.0, -0.1],
+                [-1.0, 0.0, -0.5],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
 

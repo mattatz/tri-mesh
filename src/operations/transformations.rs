@@ -148,7 +148,9 @@ impl Mesh {
     pub fn apply_transformation(&mut self, transformation: Mat4) {
         for vertex_id in self.vertex_iter() {
             let p = self.vertex_position(vertex_id);
-            let p_new = (transformation * p.extend(1.0)).truncate();
+            let p4 = Vec4::new(p.x, p.y, p.z, 1.0);
+            let result = transformation * p4;
+            let p_new = Vec3::new(result.x, result.y, result.z);
             self.move_vertex_to(vertex_id, p_new);
         }
     }

@@ -56,10 +56,8 @@ impl Mesh {
     ) -> Vec<HashSet<FaceID>> {
         let mut components: Vec<HashSet<FaceID>> = Vec::new();
         for face_id in self.face_iter() {
-            if components
-                .iter()
-                .find(|com| com.contains(&face_id))
-                .is_none()
+            if !components
+                .iter().any(|com| com.contains(&face_id))
             {
                 components.push(self.connected_component_with_limit(face_id, limit));
             }
@@ -71,7 +69,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_one_connected_component() {
@@ -88,28 +86,28 @@ mod tests {
         assert_eq!(cc.len(), 3);
 
         assert_eq!(cc[0].len() + cc[1].len() + cc[2].len(), 15);
-        assert!(cc.iter().find(|vec| vec.len() == 12).is_some());
-        assert!(cc.iter().find(|vec| vec.len() == 2).is_some());
-        assert!(cc.iter().find(|vec| vec.len() == 1).is_some());
+        assert!(cc.iter().any(|vec| vec.len() == 12));
+        assert!(cc.iter().any(|vec| vec.len() == 2));
+        assert!(cc.iter().any(|vec| vec.len() == 1));
     }
 
     fn create_connected_test_object() -> Mesh {
         TriMesh {
             positions: Positions::F64(vec![
-                vec3(1.0, -1.0, -1.0),
-                vec3(1.0, -1.0, 1.0),
-                vec3(-1.0, -1.0, 1.0),
-                vec3(-1.0, -1.0, -1.0),
-                vec3(1.0, 1.0, -1.0),
-                vec3(1.0, 1.0, 1.0),
-                vec3(-1.0, 1.0, 1.0),
-                vec3(-1.0, 1.0, -1.0),
+                [1.0, -1.0, -1.0],
+                [1.0, -1.0, 1.0],
+                [-1.0, -1.0, 1.0],
+                [-1.0, -1.0, -1.0],
+                [1.0, 1.0, -1.0],
+                [1.0, 1.0, 1.0],
+                [-1.0, 1.0, 1.0],
+                [-1.0, 1.0, -1.0],
             ]),
-            indices: Indices::U8(vec![
+            indices: Some(Indices::U8(vec![
                 0, 1, 2, 0, 2, 3, 4, 7, 6, 4, 6, 5, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2,
                 7, 3, 4, 0, 3, 4, 3, 7,
-            ]),
-            ..Default::default()
+            ])),
+            normals: None,
         }
         .into()
     }
@@ -117,27 +115,27 @@ mod tests {
     fn create_unconnected_test_object() -> Mesh {
         TriMesh {
             positions: Positions::F64(vec![
-                vec3(1.0, -1.0, -1.0),
-                vec3(1.0, -1.0, 1.0),
-                vec3(-1.0, -1.0, 1.0),
-                vec3(-1.0, -1.0, -1.0),
-                vec3(1.0, 1.0, -1.0),
-                vec3(1.0, 1.0, 1.0),
-                vec3(-1.0, 1.0, 1.0),
-                vec3(-1.0, 1.0, -1.0),
-                vec3(-1.0, 2.0, -1.0),
-                vec3(-1.0, 3.0, -1.0),
-                vec3(-2.0, 4.0, -1.0),
-                vec3(-2.0, 1.0, -1.0),
-                vec3(-1.0, 3.0, -2.0),
-                vec3(-2.0, 4.0, -3.0),
-                vec3(-2.0, 1.0, -4.0),
+                [1.0, -1.0, -1.0],
+                [1.0, -1.0, 1.0],
+                [-1.0, -1.0, 1.0],
+                [-1.0, -1.0, -1.0],
+                [1.0, 1.0, -1.0],
+                [1.0, 1.0, 1.0],
+                [-1.0, 1.0, 1.0],
+                [-1.0, 1.0, -1.0],
+                [-1.0, 2.0, -1.0],
+                [-1.0, 3.0, -1.0],
+                [-2.0, 4.0, -1.0],
+                [-2.0, 1.0, -1.0],
+                [-1.0, 3.0, -2.0],
+                [-2.0, 4.0, -3.0],
+                [-2.0, 1.0, -4.0],
             ]),
-            indices: Indices::U8(vec![
+            indices: Some(Indices::U8(vec![
                 0, 1, 2, 0, 2, 3, 4, 7, 6, 4, 6, 5, 0, 4, 5, 0, 5, 1, 1, 5, 6, 1, 6, 2, 2, 6, 7, 2,
                 7, 3, 4, 0, 3, 4, 3, 7, 8, 9, 10, 8, 10, 11, 12, 13, 14,
-            ]),
-            ..Default::default()
+            ])),
+            normals: None,
         }
         .into()
     }

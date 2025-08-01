@@ -279,7 +279,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_remove_lonely_vertices() {
@@ -301,19 +301,20 @@ mod tests {
     #[test]
     fn test_merge_overlapping_primitives() {
         let positions = vec![
-            vec3(0.0, 0.0, 0.0),
-            vec3(1.0, 0.0, -0.5),
-            vec3(-1.0, 0.0, -0.5),
-            vec3(0.0, 0.0, 0.0),
-            vec3(-1.0, 0.0, -0.5),
-            vec3(0.0, 0.0, 1.0),
-            vec3(0.0, 0.0, 0.0),
-            vec3(0.0, 0.0, 1.0),
-            vec3(1.0, 0.0, -0.5),
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, -0.5],
+            [-1.0, 0.0, -0.5],
+            [0.0, 0.0, 0.0],
+            [-1.0, 0.0, -0.5],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [1.0, 0.0, -0.5],
         ];
 
         let mut mesh: Mesh = TriMesh {
             positions: Positions::F64(positions),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -340,16 +341,17 @@ mod tests {
     fn test_merge_overlapping_individual_faces() {
         let mut mesh: Mesh = TriMesh {
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(1.0, 0.0, -0.5),
-                vec3(-1.0, 0.0, -0.5),
-                vec3(0.0, 0.0, 0.0),
-                vec3(-1.0, 0.0, -0.5),
-                vec3(0.0, 0.0, 1.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(-1.0, 0.0, -0.5),
-                vec3(0.0, 0.0, 1.0),
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, -0.5],
+                [-1.0, 0.0, -0.5],
+                [0.0, 0.0, 0.0],
+                [-1.0, 0.0, -0.5],
+                [0.0, 0.0, 1.0],
+                [0.0, 0.0, 0.0],
+                [-1.0, 0.0, -0.5],
+                [0.0, 0.0, 1.0],
             ]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -364,18 +366,18 @@ mod tests {
     #[test]
     fn test_merge_two_overlapping_faces() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5]),
+            indices: Some(Indices::U8(vec![0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(-1.0, 0.0, 0.0),
-                vec3(-0.5, 0.0, 1.0),
-                vec3(-1.5, 0.0, 1.0),
-                vec3(-1.0, 0.0, 0.0),
-                vec3(-0.5, 0.0, 1.0),
-                vec3(-1.5, 0.0, 1.0),
-                vec3(-1.0, 0.0, 1.5),
+                [0.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0],
+                [-0.5, 0.0, 1.0],
+                [-1.5, 0.0, 1.0],
+                [-1.0, 0.0, 0.0],
+                [-0.5, 0.0, 1.0],
+                [-1.5, 0.0, 1.0],
+                [-1.0, 0.0, 1.5],
             ]),
-            ..Default::default()
+            normals: None,
         }
         .into();
         mesh.merge_overlapping_primitives();
@@ -389,20 +391,23 @@ mod tests {
     #[test]
     fn test_merge_three_overlapping_faces() {
         let mut mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5, 8, 10, 9]),
+            indices: Some(Indices::U8(vec![
+                0, 1, 2, 1, 3, 2, 4, 6, 5, 6, 7, 5, 8, 10, 9,
+            ])),
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(-1.0, 0.0, 0.0),
-                vec3(-0.5, 0.0, 1.0),
-                vec3(-1.5, 0.0, 1.0),
-                vec3(-1.0, 0.0, 0.0),
-                vec3(-0.5, 0.0, 1.0),
-                vec3(-1.5, 0.0, 1.0),
-                vec3(-1.0, 0.0, 1.5),
-                vec3(-1.0, 0.0, 0.0),
-                vec3(-0.5, 0.0, 1.0),
-                vec3(-1.5, 0.0, 1.0),
+                [0.0, 0.0, 0.0],
+                [-1.0, 0.0, 0.0],
+                [-0.5, 0.0, 1.0],
+                [-1.5, 0.0, 1.0],
+                [-1.0, 0.0, 0.0],
+                [-0.5, 0.0, 1.0],
+                [-1.5, 0.0, 1.0],
+                [-1.0, 0.0, 1.5],
+                [-1.0, 0.0, 0.0],
+                [-0.5, 0.0, 1.0],
+                [-1.5, 0.0, 1.0],
             ]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -418,20 +423,21 @@ mod tests {
     fn test_merge_vertices() {
         let mut mesh: Mesh = TriMesh {
             positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(1.0, 0.0, -0.5),
-                vec3(-1.0, 0.0, -0.5),
-                vec3(0.0, 0.0, 0.0),
-                vec3(-1.0, 0.0, -0.5),
-                vec3(0.0, 0.0, 1.0),
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, -0.5],
+                [-1.0, 0.0, -0.5],
+                [0.0, 0.0, 0.0],
+                [-1.0, 0.0, -0.5],
+                [0.0, 0.0, 1.0],
             ]),
+            normals: None,
             ..Default::default()
         }
         .into();
 
         let mut vertex_id1 = None;
         for vertex_id in mesh.vertex_iter() {
-            if mesh.vertex_position(vertex_id) == vec3(0.0, 0.0, 0.0) {
+            if mesh.vertex_position(vertex_id) == Vec3::new(0.0, 0.0, 0.0) {
                 if vertex_id1.is_none() {
                     vertex_id1 = Some(vertex_id);
                 } else {
@@ -450,13 +456,14 @@ mod tests {
     fn test_merge_halfedges() {
         let mut mesh: Mesh = TriMesh {
             positions: Positions::F64(vec![
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, -1.0),
-                vec3(0.0, 0.0, 0.0),
-                vec3(1.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, -1.0],
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0],
             ]),
+            normals: None,
             ..Default::default()
         }
         .into();

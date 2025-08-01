@@ -60,7 +60,9 @@ impl Mesh {
             if let Some(Intersection::Point { point, .. }) = new_intersection {
                 let new_point = point;
                 if let Some(Intersection::Point { point, .. }) = current {
-                    if point.distance2(*ray_start_point) > new_point.distance2(*ray_start_point) {
+                    if (point - ray_start_point).magnitude_squared()
+                        > (new_point - ray_start_point).magnitude_squared()
+                    {
                         current = new_intersection;
                     }
                 } else {
@@ -107,7 +109,7 @@ impl Mesh {
         let p = self.vertex_position(self.walker_from_face(face_id).vertex_id().unwrap());
         let n = self.face_direction(face_id);
 
-        plane_line_piece_intersection(&point0, &point1, &p, &n).and_then(|intersection| {
+        plane_line_piece_intersection(point0, point1, &p, &n).and_then(|intersection| {
             match intersection {
                 PlaneLinepieceIntersectionResult::LineInPlane => {
                     let intersection0 =
@@ -212,7 +214,7 @@ impl Mesh {
     pub fn face_point_intersection(&self, face_id: FaceID, point: &Vec3) -> Option<Intersection> {
         let p = self.vertex_position(self.walker_from_face(face_id).vertex_id().unwrap());
         let n = self.face_normal(face_id);
-        if n.dot(point - p).abs() > MARGIN {
+        if n.dot(&(point - p)).abs() > MARGIN {
             return None;
         }
 
@@ -255,16 +257,13 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Positions, TriMesh};
+    use crate::types::{Positions, TriMesh};
 
     #[test]
     fn test_face_point_intersection_when_point_in_plane() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 3.0),
-                vec3(3.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 3.0], [3.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -314,7 +313,7 @@ mod tests {
             })
         );
 
-        let dir_away_from_edge = vec3(0.0, 1.0, 0.0);
+        let dir_away_from_edge = Vec3::new(0.0, 1.0, 0.0);
         let p_intersect = edge_midpoint + 0.99 * MARGIN * dir_away_from_edge;
         result = mesh.face_point_intersection_when_point_in_plane(face_id, &p_intersect);
         assert_eq!(
@@ -345,11 +344,8 @@ mod tests {
     #[test]
     fn test_edge_point_intersection() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 3.0),
-                vec3(3.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 3.0], [3.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -397,7 +393,9 @@ mod tests {
             })
         );
 
-        let dir_away_from_edge = dir_away_from_p0.cross(vec3(1.0, 1.0, 1.0)).normalize();
+        let dir_away_from_edge = dir_away_from_p0
+            .cross(&Vec3::new(1.0, 1.0, 1.0))
+            .normalize();
         let p_intersect = edge_midpoint + 0.99 * MARGIN * dir_away_from_edge;
         result = mesh.edge_point_intersection(edge_id, &p_intersect);
         assert_eq!(
@@ -418,16 +416,13 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_no_intersection() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
-        let (p0, p1) = (vec3(1.0 + MARGIN, 0.0, 0.0), vec3(3.0, 0.0, 1.0));
+        let (p0, p1) = (Vec3::new(1.0 + MARGIN, 0.0, 0.0), Vec3::new(3.0, 0.0, 1.0));
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(result, None);
@@ -436,17 +431,14 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_face_end_point_intersects() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
-        let point = vec3(0.1, 0.0, 0.1);
-        let (p0, p1) = (point, vec3(0.0, 1.0, 0.0));
+        let point = Vec3::new(0.1, 0.0, 0.1);
+        let (p0, p1) = (point, Vec3::new(0.0, 1.0, 0.0));
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(
@@ -461,17 +453,14 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_point() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
-        let point = vec3(0.1, 0.0, 0.1);
-        let (p0, p1) = (vec3(0.1, 1.0, 0.1), vec3(0.1, -0.1, 0.1));
+        let point = Vec3::new(0.1, 0.0, 0.1);
+        let (p0, p1) = (Vec3::new(0.1, 1.0, 0.1), Vec3::new(0.1, -0.1, 0.1));
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(
@@ -485,9 +474,10 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_vertex_line_piece_intersects_at_point() {
-        let point = vec3(0.1, 0.0, 0.1);
+        let point = Vec3::new(0.1, 0.0, 0.1);
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![point, vec3(0.0, 0.0, 1.0), vec3(1.0, 0.0, 0.0)]),
+            positions: Positions::F64(vec![[0.1, 0.0, 0.1], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
@@ -496,7 +486,7 @@ mod tests {
             .vertex_iter()
             .find(|v| mesh.vertex_position(*v) == point)
             .unwrap();
-        let (p0, p1) = (vec3(0.1, 0.1, 0.1), vec3(0.1, -0.1, 0.1));
+        let (p0, p1) = (Vec3::new(0.1, 0.1, 0.1), Vec3::new(0.1, -0.1, 0.1));
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(
@@ -510,22 +500,24 @@ mod tests {
 
     #[test]
     fn test_face_line_piece_intersection_when_edge_line_piece_intersects_at_point() {
-        let point = vec3(0.3, 0.0, 0.0);
+        let point = Vec3::new(0.3, 0.0, 0.0);
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
         let halfedge_id = mesh
             .face_halfedge_iter(face_id)
-            .find(|e| (vec3(0.0, 0.0, 0.0), vec3(1.0, 0.0, 0.0)) == mesh.edge_positions(*e))
+            .find(|e| {
+                (Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)) == mesh.edge_positions(*e)
+            })
             .unwrap();
-        let (p0, p1) = (point + vec3(0.0, 0.1, 0.0), point + vec3(0.0, -0.1, 0.0));
+        let (p0, p1) = (
+            point + Vec3::new(0.0, 0.1, 0.0),
+            point + Vec3::new(0.0, -0.1, 0.0),
+        );
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(
@@ -540,16 +532,13 @@ mod tests {
     #[test]
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_linepiece() {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
-        let (p0, p1) = (vec3(0.0, 0.0, 0.0), vec3(0.2, 0.0, 0.2));
+        let (p0, p1) = (Vec3::new(0.0, 0.0, 0.0), Vec3::new(0.2, 0.0, 0.2));
         let vertex_id = mesh
             .vertex_iter()
             .find(|v| mesh.vertex_position(*v) == p0)
@@ -571,17 +560,14 @@ mod tests {
     fn test_face_line_piece_intersection_when_face_line_piece_intersects_at_point_and_line_piece_is_in_plane(
     ) {
         let mesh: Mesh = TriMesh {
-            positions: Positions::F64(vec![
-                vec3(0.0, 0.0, 0.0),
-                vec3(0.0, 0.0, 1.0),
-                vec3(1.0, 0.0, 0.0),
-            ]),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0], [0.0, 0.0, 1.0], [1.0, 0.0, 0.0]]),
+            normals: None,
             ..Default::default()
         }
         .into();
         let face_id = mesh.face_iter().next().unwrap();
-        let point = vec3(0.1, 0.0, 0.1);
-        let (p0, p1) = (point, vec3(1.2, 0.0, 0.2));
+        let point = Vec3::new(0.1, 0.0, 0.1);
+        let (p0, p1) = (point, Vec3::new(1.2, 0.0, 0.2));
 
         let result = mesh.face_line_piece_intersection(face_id, &p0, &p1);
         assert_eq!(
@@ -617,8 +603,8 @@ mod utility {
         let ap0 = *p0 - *p;
         let ap1 = *p1 - *p;
 
-        let d0 = n.dot(ap0);
-        let d1 = n.dot(ap1);
+        let d0 = n.dot(&ap0);
+        let d1 = n.dot(&ap1);
 
         if d0.abs() < MARGIN && d1.abs() < MARGIN {
             // p0 and p1 lies in the plane
@@ -634,7 +620,7 @@ mod utility {
         {
             // Find intersection point:
             let p01 = *p1 - *p0;
-            let t = n.dot(-ap0) / n.dot(p01);
+            let t = n.dot(&(-ap0)) / n.dot(&p01);
             let point = p0 + p01 * t;
             Some(PlaneLinepieceIntersectionResult::Intersection(point))
         } else {
@@ -648,9 +634,9 @@ mod utility {
         plane_point: &Vec3,
         plane_normal: &Vec3,
     ) -> Option<f64> {
-        let denom = plane_normal.dot(*ray_direction);
+        let denom = plane_normal.dot(ray_direction);
         if denom.abs() >= MARGIN {
-            let parameter = plane_normal.dot(plane_point - ray_start_point) / denom;
+            let parameter = plane_normal.dot(&(plane_point - ray_start_point)) / denom;
             if parameter >= 0.0 {
                 Some(parameter)
             } else {
@@ -667,11 +653,11 @@ mod utility {
         let v0 = b - a;
         let v1 = c - a;
         let v2 = p - a;
-        let d00 = v0.dot(v0);
-        let d01 = v0.dot(v1);
-        let d11 = v1.dot(v1);
-        let d20 = v2.dot(v0);
-        let d21 = v2.dot(v1);
+        let d00 = v0.dot(&v0);
+        let d01 = v0.dot(&v1);
+        let d11 = v1.dot(&v1);
+        let d20 = v2.dot(&v0);
+        let d21 = v2.dot(&v1);
         let denom = d00 * d11 - d01 * d01;
         let v = (d11 * d20 - d01 * d21) / denom;
         let w = (d00 * d21 - d01 * d20) / denom;
@@ -683,12 +669,12 @@ mod utility {
         let v = p1 - p0;
         let w = point - p0;
 
-        let c1 = w.dot(v);
+        let c1 = w.dot(&v);
         if c1 <= 0.0 {
             return w.magnitude();
         }
 
-        let c2 = v.dot(v);
+        let c2 = v.dot(&v);
         if c2 <= c1 {
             return (point - p1).magnitude();
         }
@@ -704,70 +690,70 @@ mod utility {
 
         #[test]
         fn test_barycentric() {
-            let a = vec3(0.0, 0.0, 0.0);
-            let b = vec3(1.0, 0.0, 0.0);
-            let c = vec3(0.0, 0.0, 1.0);
+            let a = Vec3::new(0.0, 0.0, 0.0);
+            let b = Vec3::new(1.0, 0.0, 0.0);
+            let c = Vec3::new(0.0, 0.0, 1.0);
 
             assert_eq!(
-                barycentric(&vec3(0.0, 0.0, 0.0), &a, &b, &c),
+                barycentric(&Vec3::new(0.0, 0.0, 0.0), &a, &b, &c),
                 (1.0, 0.0, 0.0)
             );
             assert_eq!(
-                barycentric(&vec3(1.0, 0.0, 0.0), &a, &b, &c),
+                barycentric(&Vec3::new(1.0, 0.0, 0.0), &a, &b, &c),
                 (0.0, 1.0, 0.0)
             );
             assert_eq!(
-                barycentric(&vec3(0.0, 0.0, 1.0), &a, &b, &c),
+                barycentric(&Vec3::new(0.0, 0.0, 1.0), &a, &b, &c),
                 (0.0, 0.0, 1.0)
             );
             assert_eq!(
-                barycentric(&vec3(0.5, 0.0, 0.5), &a, &b, &c),
+                barycentric(&Vec3::new(0.5, 0.0, 0.5), &a, &b, &c),
                 (0.0, 0.5, 0.5)
             );
             assert_eq!(
-                barycentric(&vec3(0.25, 0.0, 0.25), &a, &b, &c),
+                barycentric(&Vec3::new(0.25, 0.0, 0.25), &a, &b, &c),
                 (0.5, 0.25, 0.25)
             );
         }
 
         #[test]
         fn test_point_line_segment_distance() {
-            let a = vec3(0.0, 0.0, 0.0);
-            let b = vec3(1.0, 0.0, 1.0);
+            let a = Vec3::new(0.0, 0.0, 0.0);
+            let b = Vec3::new(1.0, 0.0, 1.0);
 
             assert_eq!(
-                point_line_segment_distance(&vec3(0.0, 0.0, 0.0), &a, &b),
+                point_line_segment_distance(&Vec3::new(0.0, 0.0, 0.0), &a, &b),
                 0.0
             );
             assert_eq!(
-                point_line_segment_distance(&vec3(1.0, 0.0, 1.0), &a, &b),
+                point_line_segment_distance(&Vec3::new(1.0, 0.0, 1.0), &a, &b),
                 0.0
             );
             assert_eq!(
-                point_line_segment_distance(&vec3(0.0, 0.0, 1.0), &a, &b),
+                point_line_segment_distance(&Vec3::new(0.0, 0.0, 1.0), &a, &b),
                 0.5 * 2.0f64.sqrt()
             );
             assert_eq!(
-                point_line_segment_distance(&vec3(0.5, 0.0, 0.5), &a, &b),
+                point_line_segment_distance(&Vec3::new(0.5, 0.0, 0.5), &a, &b),
                 0.0
             );
             assert_eq!(
-                point_line_segment_distance(&vec3(0.0, 0.0, -0.25), &a, &b),
+                point_line_segment_distance(&Vec3::new(0.0, 0.0, -0.25), &a, &b),
                 0.25
             );
             assert_eq!(
-                point_line_segment_distance(&vec3(0.25, 0.0, 0.0), &a, &b),
+                point_line_segment_distance(&Vec3::new(0.25, 0.0, 0.0), &a, &b),
                 0.5 * (2.0 * 0.25f64 * 0.25f64).sqrt()
             );
         }
 
         #[test]
         fn test_plane_ray_intersection_no_intersection() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 0.0, 0.0);
-            let dir = vec3(1.0, 0.0, 0.0);
+            let p0 = Vec3::new(0.0, 0.0, 0.0);
+            let dir = Vec3::new(1.0, 0.0, 0.0);
 
             let result = plane_ray_intersection(&p0, &dir, &p, &n);
             assert_eq!(result, None);
@@ -775,11 +761,11 @@ mod utility {
 
         #[test]
         fn test_plane_ray_intersection_point_in_plane() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 0.0, 1.0);
-            let dir = vec3(0.0, 1.0, 1.0);
+            let p0 = Vec3::new(0.0, 0.0, 1.0);
+            let dir = Vec3::new(0.0, 1.0, 1.0);
 
             let result = plane_ray_intersection(&p0, &dir, &p, &n);
             assert_eq!(result, Some(0.0));
@@ -787,11 +773,11 @@ mod utility {
 
         #[test]
         fn test_plane_ray_intersection_intersection() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 1.0, 0.0);
-            let dir = vec3(0.0, 0.0, 1.0);
+            let p0 = Vec3::new(0.0, 1.0, 0.0);
+            let dir = Vec3::new(0.0, 0.0, 1.0);
 
             let result = plane_ray_intersection(&p0, &dir, &p, &n);
             assert_eq!(result, Some(1.0));
@@ -799,11 +785,11 @@ mod utility {
 
         #[test]
         fn test_plane_line_piece_intersection_no_intersection() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 0.0, 0.0);
-            let p1 = vec3(0.0, 1.0, 1.0 - 1.0001 * MARGIN);
+            let p0 = Vec3::new(0.0, 0.0, 0.0);
+            let p1 = Vec3::new(0.0, 1.0, 1.0 - 1.0001 * MARGIN);
 
             let result = plane_line_piece_intersection(&p0, &p1, &p, &n);
             assert_eq!(result, None);
@@ -811,11 +797,11 @@ mod utility {
 
         #[test]
         fn test_plane_line_piece_intersection_point_in_plane() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 0.0, 0.0);
-            let p1 = vec3(0.0, 1.0, 1.0);
+            let p0 = Vec3::new(0.0, 0.0, 0.0);
+            let p1 = Vec3::new(0.0, 1.0, 1.0);
 
             let result = plane_line_piece_intersection(&p0, &p1, &p, &n);
             assert_eq!(result, Some(PlaneLinepieceIntersectionResult::P1InPlane));
@@ -823,16 +809,16 @@ mod utility {
 
         #[test]
         fn test_plane_line_piece_intersection_intersection() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(0.0, 1.0, 0.0);
-            let p1 = vec3(0.0, 1.0, 1.0 + MARGIN);
+            let p0 = Vec3::new(0.0, 1.0, 0.0);
+            let p1 = Vec3::new(0.0, 1.0, 1.0 + MARGIN);
 
             let result = plane_line_piece_intersection(&p0, &p1, &p, &n);
             assert_eq!(
                 result,
-                Some(PlaneLinepieceIntersectionResult::Intersection(vec3(
+                Some(PlaneLinepieceIntersectionResult::Intersection(Vec3::new(
                     0.0, 1.0, 1.0
                 )))
             );
@@ -840,11 +826,11 @@ mod utility {
 
         #[test]
         fn test_plane_line_piece_intersection_line_in_plane() {
-            let p = vec3(1.0, 1.0, 1.0);
-            let n = vec3(0.0, 0.0, -1.0);
+            let p = Vec3::new(1.0, 1.0, 1.0);
+            let n = Vec3::new(0.0, 0.0, -1.0);
 
-            let p0 = vec3(-1.0, 1.0, 1.0);
-            let p1 = vec3(0.0, 1.0, 1.0);
+            let p0 = Vec3::new(-1.0, 1.0, 1.0);
+            let p1 = Vec3::new(0.0, 1.0, 1.0);
 
             let result = plane_line_piece_intersection(&p0, &p1, &p, &n);
             assert_eq!(result, Some(PlaneLinepieceIntersectionResult::LineInPlane));

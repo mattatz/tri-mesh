@@ -29,7 +29,7 @@ impl<'a> VertexHalfedgeIter<'a> {
     }
 }
 
-impl<'a> Iterator for VertexHalfedgeIter<'a> {
+impl Iterator for VertexHalfedgeIter<'_> {
     type Item = HalfEdgeID;
 
     fn next(&mut self) -> Option<HalfEdgeID> {
@@ -45,7 +45,7 @@ impl<'a> Iterator for VertexHalfedgeIter<'a> {
             None => {
                 // In the case there are holes in the one-ring
                 self.walker.as_twin();
-                while let Some(_) = self.walker.face_id() {
+                while self.walker.face_id().is_some() {
                     self.walker.as_next().as_twin();
                 }
                 self.walker.as_twin();
@@ -74,7 +74,7 @@ impl<'a> FaceHalfedgeIter<'a> {
     }
 }
 
-impl<'a> Iterator for FaceHalfedgeIter<'a> {
+impl Iterator for FaceHalfedgeIter<'_> {
     type Item = HalfEdgeID;
 
     fn next(&mut self) -> Option<HalfEdgeID> {
@@ -102,7 +102,7 @@ impl<'a> EdgeIter<'a> {
     }
 }
 
-impl<'a> Iterator for EdgeIter<'a> {
+impl Iterator for EdgeIter<'_> {
     type Item = HalfEdgeID;
 
     fn next(&mut self) -> Option<HalfEdgeID> {
@@ -128,7 +128,7 @@ impl Mesh {
     /// ```
     /// # use tri_mesh::*;
     /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
-    /// let mut sum_vertex_positions = Vec3::zero();
+    /// let mut sum_vertex_positions = Vec3::zeros();
     /// for vertex_id in mesh.vertex_iter() {
     ///     sum_vertex_positions += mesh.vertex_position(vertex_id);
     /// }
@@ -170,7 +170,7 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// let mut edge_length_average = 0.0;
     /// let mut i = 0;
     /// for halfedge_id in mesh.edge_iter() {
@@ -191,7 +191,7 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// let mut sum_face_area = 0.0;
     /// for face_id in mesh.face_iter() {
     ///     sum_face_area += mesh.face_area(face_id);
@@ -213,9 +213,9 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// # let vertex_id = mesh.vertex_iter().next().unwrap();
-    /// let mut one_ring_average_position = Vec3::zero();
+    /// let mut one_ring_average_position = Vec3::zeros();
     /// let mut i = 0;
     /// for halfedge_id in mesh.vertex_halfedge_iter(vertex_id) {
     ///     let walker = mesh.walker_from_halfedge(halfedge_id);
@@ -236,7 +236,7 @@ impl Mesh {
     ///
     /// ```
     /// # use tri_mesh::*;
-    /// # let mesh: Mesh = three_d_asset::TriMesh::sphere(4).into();
+    /// # let mesh: Mesh = TriMesh::sphere(4).into();
     /// # let face_id = mesh.face_iter().next().unwrap();
     /// let mut face_circumference = 0.0f64;
     /// for halfedge_id in mesh.face_halfedge_iter(face_id) {
@@ -252,7 +252,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::{Indices, Positions, TriMesh};
+    use crate::types::{Indices, Positions, TriMesh};
 
     #[test]
     fn test_vertex_iterator() {
@@ -260,7 +260,7 @@ mod tests {
 
         let mut i = 0;
         for _ in mesh.vertex_iter() {
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(4, i);
 
@@ -269,7 +269,7 @@ mod tests {
         i = 0;
         for vertex_id in mesh.vertex_iter() {
             assert_eq!(vertex_id, vec[i]);
-            i = i + 1;
+            i += 1;
         }
     }
 
@@ -279,7 +279,7 @@ mod tests {
 
         let mut i = 0;
         for _ in mesh.halfedge_iter() {
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(12, i);
 
@@ -288,7 +288,7 @@ mod tests {
         i = 0;
         for halfedge_id in mesh.halfedge_iter() {
             assert_eq!(halfedge_id, vec[i]);
-            i = i + 1;
+            i += 1;
         }
     }
 
@@ -298,7 +298,7 @@ mod tests {
 
         let mut i = 0;
         for _ in mesh.edge_iter() {
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(6, i);
 
@@ -307,14 +307,14 @@ mod tests {
         i = 0;
         for halfedge_id in mesh.edge_iter() {
             assert_eq!(halfedge_id, vec[i]);
-            i = i + 1;
+            i += 1;
         }
 
         // Test that the twin is not returned
         for halfedge_id in mesh.edge_iter() {
             let twin_id = mesh.walker_from_halfedge(halfedge_id).twin_id().unwrap();
             assert!(halfedge_id < twin_id);
-            assert!(vec.iter().find(|edge_id| *edge_id == &twin_id).is_none());
+            assert!(!vec.iter().any(|edge_id| edge_id == &twin_id));
         }
     }
 
@@ -324,7 +324,7 @@ mod tests {
 
         let mut i = 0;
         for _ in mesh.face_iter() {
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(3, i);
 
@@ -333,7 +333,7 @@ mod tests {
         i = 0;
         for face_id in mesh.face_iter() {
             assert_eq!(face_id, vec[i]);
-            i = i + 1;
+            i += 1;
         }
     }
 
@@ -345,7 +345,7 @@ mod tests {
         let vertex_id = mesh.vertex_iter().last().unwrap();
         for halfedge_id in mesh.vertex_halfedge_iter(vertex_id) {
             assert!(mesh.walker_from_halfedge(halfedge_id).vertex_id().is_some());
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(i, 3, "All edges of a one-ring are not visited");
     }
@@ -353,16 +353,16 @@ mod tests {
     #[test]
     fn test_vertex_halfedge_iterator_with_holes() {
         let mesh: Mesh = TriMesh {
-            indices: Indices::U8(vec![0, 2, 3, 0, 4, 1, 0, 1, 2]),
-            positions: Positions::F64(vec![vec3(0.0, 0.0, 0.0); 5]),
-            ..Default::default()
+            indices: Some(Indices::U8(vec![0, 2, 3, 0, 4, 1, 0, 1, 2])),
+            positions: Positions::F64(vec![[0.0, 0.0, 0.0]; 5]),
+            normals: None,
         }
         .into();
 
         let mut i = 0;
         for halfedge_id in mesh.vertex_halfedge_iter(unsafe { VertexID::new(0) }) {
             assert!(mesh.walker_from_halfedge(halfedge_id).vertex_id().is_some());
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(i, 4, "All edges of a one-ring are not visited");
     }
@@ -375,7 +375,7 @@ mod tests {
             let walker = mesh.walker_from_halfedge(halfedge_id);
             assert!(walker.halfedge_id().is_some());
             assert!(walker.face_id().is_some());
-            i = i + 1;
+            i += 1;
         }
         assert_eq!(i, 3, "All edges of a face are not visited");
     }

@@ -24,12 +24,7 @@ impl Mesh {
         vertex_id1: VertexID,
         vertex_id2: VertexID,
     ) -> Option<HalfEdgeID> {
-        for halfedge_id in self.vertex_halfedge_iter(vertex_id1) {
-            if self.walker_from_halfedge(halfedge_id).vertex_id().unwrap() == vertex_id2 {
-                return Some(halfedge_id);
-            }
-        }
-        None
+        self.vertex_halfedge_iter(vertex_id1).find(|&halfedge_id| self.walker_from_halfedge(halfedge_id).vertex_id().unwrap() == vertex_id2)
     }
 
     /// Returns whether or not the vertex is on a boundary.
@@ -93,23 +88,17 @@ impl Mesh {
         if v1 < v2 {
             if v2 < v3 {
                 (v1, v2, v3)
+            } else if v1 < v3 {
+                (v1, v3, v2)
             } else {
-                if v1 < v3 {
-                    (v1, v3, v2)
-                } else {
-                    (v3, v1, v2)
-                }
+                (v3, v1, v2)
             }
+        } else if v1 < v3 {
+            (v2, v1, v3)
+        } else if v2 < v3 {
+            (v2, v3, v1)
         } else {
-            if v1 < v3 {
-                (v2, v1, v3)
-            } else {
-                if v2 < v3 {
-                    (v2, v3, v1)
-                } else {
-                    (v3, v2, v1)
-                }
-            }
+            (v3, v2, v1)
         }
     }
 }
@@ -117,7 +106,7 @@ impl Mesh {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use three_d_asset::TriMesh;
+    use crate::types::TriMesh;
     #[test]
     fn test_is_closed_when_not_closed() {
         let mesh = crate::test_utility::subdivided_triangle();
