@@ -15,7 +15,7 @@ exclude = ["/examples", ".gitignore"]
 default = []
 
 [dependencies]
-nalgebra = { version = "0.33", features = ["serde-serialize"] }
+nalgebra = { version = "0.34", features = ["serde-serialize"] }
 thiserror = "2.0"
 
 [dev-dependencies]
